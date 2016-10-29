@@ -119,9 +119,6 @@ class HistoryRemeberingTextCommandBox(npyscreen.TextCommandBox):
 
         self._print()
 
-
-
-
         # reset everything to normal
         self.parent.curses_pad.attroff(curses.A_BOLD)
         self.parent.curses_pad.attroff(curses.A_UNDERLINE)
@@ -136,13 +133,13 @@ class HistoryRemeberingTextCommandBox(npyscreen.TextCommandBox):
         return self.PROMPT + value
 
 
-class FmSearchActive(npyscreen.FormMuttActiveWithMenus):
+class MainWindow(npyscreen.FormMuttActiveWithMenus):
     COMMAND_WIDGET_CLASS = HistoryRemeberingTextCommandBox
     ACTION_CONTROLLER = SendMessageActionController
     MAIN_WIDGET_CLASS = MessageHighlightPager
 
     def create(self):
-        super(FmSearchActive, self).create()
+        super(MainWindow, self).create()
 
         menu = self.new_menu(name='Menu')
         menu.addItem('Send file')
@@ -150,9 +147,9 @@ class FmSearchActive(npyscreen.FormMuttActiveWithMenus):
         encryption.addItem('None')
         encryption.addItem('Caesar Cipher')
 
-class TestApp(npyscreen.NPSApp):
+class BobApplication(npyscreen.NPSApp):
     def main(self):
-        F = FmSearchActive()
+        F = MainWindow()
         F.wStatus1.value = "History "
         F.wStatus2.value = "Connected to localhost:4000         Encryption: None"
         F.value.set_values([])
@@ -162,5 +159,5 @@ class TestApp(npyscreen.NPSApp):
 
 
 if __name__ == "__main__":
-    App = TestApp()
+    App = BobApplication()
     App.run()
