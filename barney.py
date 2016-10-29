@@ -136,10 +136,19 @@ class HistoryRemeberingTextCommandBox(npyscreen.TextCommandBox):
         return self.PROMPT + value
 
 
-class FmSearchActive(npyscreen.FormMuttActive):
+class FmSearchActive(npyscreen.FormMuttActiveWithMenus):
     COMMAND_WIDGET_CLASS = HistoryRemeberingTextCommandBox
     ACTION_CONTROLLER = SendMessageActionController
     MAIN_WIDGET_CLASS = MessageHighlightPager
+
+    def create(self):
+        super(FmSearchActive, self).create()
+
+        menu = self.new_menu(name='Menu')
+        menu.addItem('Send file')
+        encryption = menu.addNewSubmenu('Encryption')
+        encryption.addItem('None')
+        encryption.addItem('Caesar Cipher')
 
 class TestApp(npyscreen.NPSApp):
     def main(self):
