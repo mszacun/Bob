@@ -19,10 +19,11 @@ class MessageHighlightTextfield(npyscreen.Textfield):
         yellow = self.parent.theme_manager.findPair(self, 'WARNING')
         blue = self.parent.theme_manager.findPair(self, 'NO_EDIT')
 
-        highlight = [yellow for _ in range(len(match.group(1)))]
-        highlight += [blue for _ in range(len(match.group(2)))]
+        if match:
+            highlight = [yellow for _ in range(len(match.group(1)))]
+            highlight += [blue for _ in range(len(match.group(2)))]
 
-        self._highlightingdata = highlight
+            self._highlightingdata = highlight
 
 
 class MessageHighlightPager(npyscreen.Pager):
