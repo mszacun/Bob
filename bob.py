@@ -5,7 +5,7 @@ import npyscreen
 from datetime import datetime
 
 from networking import Client, Server
-from messages import TextMessage, DisconnectMessage
+from messages import TextMessage, DisconnectMessage, ConnectionEstablishedMessage
 
 
 class Message(object):
@@ -33,9 +33,8 @@ class MessageHighlightTextfield(npyscreen.Textfield):
         yellow = self.parent.theme_manager.findPair(self, 'WARNING')
         blue = self.parent.theme_manager.findPair(self, 'NO_EDIT')
 
-        sender_color = blue if match.group(2) == 'You: ' else green
-
         if match:
+            sender_color = blue if match.group(2) == 'You: ' else green
             highlight = [yellow for _ in range(len(match.group(1)))]
             highlight += [sender_color for _ in range(len(match.group(2)))]
 
@@ -180,7 +179,14 @@ class MainWindow(npyscreen.FormMuttActiveWithMenus):
             self.wMain.display()
         if isinstance(message, DisconnectMessage):
             self.exit_application()
+        if isinstance(message, ConnectionEstablishedMessage):
+            status_message = 'connected with {}'.format(message.get_formatted_remote_address())
+            self.refresh_statusbar(status_message, 'None')
 
+    def refresh_statusbar(self, status_message, encryption_message):
+            self.wStatus2.value = "{}: {}         Encryption: {} ".format(self.protocol.myself_name,
+                                                                          status_message, encryption_message)
+            self.wStatus2.display()
 
     def send_message(self, message):
         self.protocol.send_message(message)
@@ -201,7 +207,7 @@ class BobApplication(npyscreen.NPSAppManaged):
     def onStart(self):
         F = MainWindow(protocol)
         F.wStatus1.value = "History "
-        F.wStatus2.value = "{}         Encryption: None ".format(self.protocol.panel_caption)
+        F.refresh_statusbar(self.protocol.initial_panel_caption, 'None')
         F.value.set_values([])
         F.wMain.values = F.value.get()
 
@@ -212,7 +218,7 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description='Bob - Simple and safe instant messaging')
     parser.add_argument('-l', '--listen', action='store_true', help='Start in server mode (listen on specified port)')
     parser.add_argument('--port', '-p', default=1306, help='Port used for communication (to listen to, or to connect to)')
-    parser.add_argument('hostname', nargs='?', default='localhost', help='Host to which connect when running in client mode')
+    parser.add_argument('hostname', nargs='?', default='127.0.0.1', help='Host to which connect when running in client mode')
 
     args = parser.parse_args()
     port = int(args.port)

@@ -2,7 +2,7 @@ import socket
 from threading import Thread
 from Queue import Queue
 
-from messages import TextMessage, DisconnectMessage
+from messages import TextMessage, DisconnectMessage, ConnectionEstablishedMessage
 
 
 class NetworkProtocol(Thread):
@@ -28,8 +28,9 @@ class NetworkProtocol(Thread):
 
 
 class Server(NetworkProtocol):
-    panel_caption = 'Waiting for connection'
+    initial_panel_caption = 'waiting for connection...'
     participant_name = 'Client'
+    myself_name = 'Server'
 
     def __init__(self, local_port):
         super(Server, self).__init__()
@@ -43,13 +44,16 @@ class Server(NetworkProtocol):
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.server_socket.bind(('0.0.0.0', self.local_port))
         self.server_socket.listen(5)
-        self.socket, self.client_addres = self.server_socket.accept()
+        self.socket, self.client_address = self.server_socket.accept()
+
+        self.queue.put(ConnectionEstablishedMessage(self.client_address))
 
         self.main_loop()
 
 class Client(NetworkProtocol):
-    panel_caption = 'Connected to localhost:4000'
+    initial_panel_caption = 'connecting to server...'
     participant_name = 'Server'
+    myself_name = 'Client'
 
     def __init__(self, hostname, remote_port):
         super(Client, self).__init__()
@@ -59,5 +63,7 @@ class Client(NetworkProtocol):
     def run(self):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.connect((self.hostname, self.remote_port))
+
+        self.queue.put(ConnectionEstablishedMessage((self.hostname, self.remote_port)))
 
         self.main_loop()
