@@ -3,6 +3,7 @@ from threading import Thread
 from Queue import Queue
 
 from messages import TextMessage, DisconnectMessage, ConnectionEstablishedMessage
+from cryptography import CaesarCipher
 
 
 class NetworkProtocol(Thread):
@@ -10,9 +11,11 @@ class NetworkProtocol(Thread):
         super(NetworkProtocol, self).__init__()
         self.queue = Queue()
         self.daemon = True
+        self.cipher = CaesarCipher(key=3)
 
     def send_message(self, message):
-        self.socket.sendall(message)
+        encrypted = self.cipher.encrypt(message)
+        self.socket.sendall(encrypted)
 
     def disconnect(self):
         if hasattr(self, 'socket'):
@@ -24,7 +27,7 @@ class NetworkProtocol(Thread):
             if not data:
                 self.queue.put(DisconnectMessage())
             else:
-                self.queue.put(TextMessage(data))
+                self.queue.put(TextMessage(self.cipher.decrypt(data)))
 
 
 class Server(NetworkProtocol):
