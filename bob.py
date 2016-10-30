@@ -33,9 +33,11 @@ class MessageHighlightTextfield(npyscreen.Textfield):
         yellow = self.parent.theme_manager.findPair(self, 'WARNING')
         blue = self.parent.theme_manager.findPair(self, 'NO_EDIT')
 
+        sender_color = blue if match.group(2) == 'You: ' else green
+
         if match:
             highlight = [yellow for _ in range(len(match.group(1)))]
-            highlight += [blue for _ in range(len(match.group(2)))]
+            highlight += [sender_color for _ in range(len(match.group(2)))]
 
             self._highlightingdata = highlight
 
@@ -213,8 +215,9 @@ if __name__ == "__main__":
     parser.add_argument('hostname', nargs='?', default='localhost', help='Host to which connect when running in client mode')
 
     args = parser.parse_args()
+    port = int(args.port)
 
-    protocol = Server(args.port) if args.listen else Client(args.hostname, args.port)
+    protocol = Server(port) if args.listen else Client(args.hostname, port)
     protocol.start()
     App = BobApplication(protocol)
     App.run()
