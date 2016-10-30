@@ -8,8 +8,11 @@ fi
 
 tmux send-keys -t :.1 "(cd ~/bob; python2 bob.py -l)"
 tmux send-keys -t :.1 Enter
+sleep 0.3
 
 tmux send-keys -t :.2 "(cd ~/bob; python2 bob.py)"
 tmux send-keys -t :.2 Enter
+
+tmux select-pane -t :.2
 
 # map <leader>r :!sh ~/bob/run.sh<CR>
