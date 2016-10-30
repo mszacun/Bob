@@ -2,6 +2,8 @@ import socket
 from threading import Thread
 from Queue import Queue
 
+from messages import TextMessage, DisconnectMessage
+
 
 class NetworkProtocol(Thread):
     def __init__(self):
@@ -15,6 +17,14 @@ class NetworkProtocol(Thread):
     def disconnect(self):
         if hasattr(self, 'socket'):
             self.socket.close()
+
+    def main_loop(self):
+        while True:
+            data = self.socket.recv(128)
+            if not data:
+                self.queue.put(DisconnectMessage())
+            else:
+                self.queue.put(TextMessage(data))
 
 
 class Server(NetworkProtocol):
@@ -35,13 +45,7 @@ class Server(NetworkProtocol):
         self.server_socket.listen(5)
         self.socket, self.client_addres = self.server_socket.accept()
 
-        while True:
-            data = self.socket.recv(128)
-            if not data:
-                break
-            else:
-                self.queue.put(data)
-
+        self.main_loop()
 
 class Client(NetworkProtocol):
     panel_caption = 'Connected to localhost:4000'
@@ -56,6 +60,4 @@ class Client(NetworkProtocol):
         self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.socket.connect((self.hostname, self.remote_port))
 
-        while True:
-            self.queue.put(self.socket.recv(128))
-
+        self.main_loop()

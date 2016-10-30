@@ -5,6 +5,7 @@ import npyscreen
 from datetime import datetime
 
 from networking import Client, Server
+from messages import TextMessage, DisconnectMessage
 
 
 class Message(object):
@@ -165,29 +166,44 @@ class MainWindow(npyscreen.FormMuttActiveWithMenus):
         encryption = menu.addNewSubmenu('Encryption')
         encryption.addItem('None')
         encryption.addItem('Caesar Cipher')
+        menu.addItem('Exit', self.exit_application)
 
     def while_waiting(self):
         while (not self.protocol.queue.empty()):
-            self.wMain.values.append(Message(self.protocol.queue.get(), self.protocol.participant_name))
+            self.dispatch(self.protocol.queue.get())
+
+    def dispatch(self, message):
+        if isinstance(message, TextMessage):
+            self.wMain.values.append(Message(message.content, self.protocol.participant_name))
             self.wMain.display()
+        if isinstance(message, DisconnectMessage):
+            self.exit_application()
+
 
     def send_message(self, message):
         self.protocol.send_message(message)
 
+    def exit_application(self):
+        self.protocol.disconnect()
 
-class BobApplication(npyscreen.NPSApp):
+        self.parentApp.setNextForm(None)
+        self.editing = False
+        self.parentApp.switchFormNow()
+
+
+class BobApplication(npyscreen.NPSAppManaged):
     def __init__(self, protocol):
         super(BobApplication, self).__init__()
         self.protocol = protocol
 
-    def main(self):
+    def onStart(self):
         F = MainWindow(protocol)
         F.wStatus1.value = "History "
         F.wStatus2.value = "{}         Encryption: None ".format(self.protocol.panel_caption)
         F.value.set_values([])
         F.wMain.values = F.value.get()
 
-        F.edit()
+        self.registerForm('MAIN', F)
 
 
 if __name__ == "__main__":
