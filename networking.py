@@ -1,9 +1,13 @@
 import socket
 from threading import Thread
 from Queue import Queue
+import json
 
 from messages import TextMessage, DisconnectMessage, ConnectionEstablishedMessage
 from cryptography import CaesarCipher
+
+
+TEXT_MESSAGE_TYPE = 'TEXT_MESSAGE'
 
 
 class NetworkProtocol(Thread):
@@ -15,7 +19,10 @@ class NetworkProtocol(Thread):
 
     def send_message(self, message):
         encrypted = self.cipher.encrypt(message)
-        self.socket.sendall(encrypted)
+        self._send({'type': TEXT_MESSAGE_TYPE, 'content': encrypted})
+
+    def _send(self, message_dict):
+        self.socket.sendall(json.dumps(message_dict))
 
     def disconnect(self):
         if hasattr(self, 'socket'):
@@ -27,7 +34,11 @@ class NetworkProtocol(Thread):
             if not data:
                 self.queue.put(DisconnectMessage())
             else:
-                self.queue.put(TextMessage(self.cipher.decrypt(data)))
+                self._dispatch(json.loads(data))
+
+    def _dispatch(self, message_dict):
+        if message_dict['type'] == TEXT_MESSAGE_TYPE:
+            self.queue.put(TextMessage(self.cipher.decrypt(message_dict['content'])))
 
 
 class Server(NetworkProtocol):
