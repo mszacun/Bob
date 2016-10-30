@@ -11,3 +11,5 @@ tmux send-keys -t :.1 Enter
 
 tmux send-keys -t :.2 "(cd ~/bob; python2 bob.py)"
 tmux send-keys -t :.2 Enter
+
+# map <leader>r :!sh ~/bob/run.sh<CR>
