@@ -35,14 +35,26 @@ class MessageHighlightTextfield(npyscreen.Textfield):
 
         if match:
             sender_color = blue if match.group(2) == 'You: ' else green
+
             highlight = [yellow for _ in range(len(match.group(1)))]
             highlight += [sender_color for _ in range(len(match.group(2)))]
 
             self._highlightingdata = highlight
 
 
-class MessageHighlightPager(npyscreen.Pager):
+class MessageHighlightMultiLine(npyscreen.MultiLine):
     _contained_widgets = MessageHighlightTextfield
+
+    def set_up_handlers(self):
+        super(MessageHighlightMultiLine, self).set_up_handlers()
+        self.handlers.update({
+            curses.ascii.NL:    self.show_message_details,
+            curses.ascii.CR:    self.show_message_details,
+        })
+
+    def show_message_details(self, pressed_key):
+        seleted_message = self.values[self.cursor_line]
+        npyscreen.notify_confirm(str(seleted_message), title='Message details', editw=1)
 
 
 class SendMessageActionController(npyscreen.ActionControllerSimple):
@@ -152,7 +164,7 @@ class HistoryRemeberingTextCommandBox(npyscreen.TextCommandBox):
 class MainWindow(npyscreen.FormMuttActiveWithMenus):
     COMMAND_WIDGET_CLASS = HistoryRemeberingTextCommandBox
     ACTION_CONTROLLER = SendMessageActionController
-    MAIN_WIDGET_CLASS = MessageHighlightPager
+    MAIN_WIDGET_CLASS = MessageHighlightMultiLine
 
     def __init__(self, protocol):
         super(MainWindow, self).__init__()
