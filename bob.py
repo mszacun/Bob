@@ -1,7 +1,10 @@
+import argparse
 import re
 import curses
 import npyscreen
 from datetime import datetime
+
+from networking import Client, Server
 
 
 class Message(object):
@@ -45,6 +48,7 @@ class SendMessageActionController(npyscreen.ActionControllerSimple):
         self.add_action('.*', self.send_message, False)
 
     def send_message(self, command_line, widget_proxy, live):
+        self.parent.send_message(command_line)
         self.parent.wMain.values.append(Message(command_line))
         self.parent.wMain.display()
 
@@ -148,8 +152,13 @@ class MainWindow(npyscreen.FormMuttActiveWithMenus):
     ACTION_CONTROLLER = SendMessageActionController
     MAIN_WIDGET_CLASS = MessageHighlightPager
 
+    def __init__(self, protocol):
+        super(MainWindow, self).__init__()
+        self.protocol = protocol
+
     def create(self):
         super(MainWindow, self).create()
+        self.keypress_timeout = 1
 
         menu = self.new_menu(name='Menu')
         menu.addItem('Send file')
@@ -157,11 +166,24 @@ class MainWindow(npyscreen.FormMuttActiveWithMenus):
         encryption.addItem('None')
         encryption.addItem('Caesar Cipher')
 
+    def while_waiting(self):
+        while (not self.protocol.queue.empty()):
+            self.wMain.values.append(Message(self.protocol.queue.get(), self.protocol.participant_name))
+            self.wMain.display()
+
+    def send_message(self, message):
+        self.protocol.send_message(message)
+
+
 class BobApplication(npyscreen.NPSApp):
+    def __init__(self, protocol):
+        super(BobApplication, self).__init__()
+        self.protocol = protocol
+
     def main(self):
-        F = MainWindow()
+        F = MainWindow(protocol)
         F.wStatus1.value = "History "
-        F.wStatus2.value = "Connected to localhost:4000         Encryption: None"
+        F.wStatus2.value = "{}         Encryption: None ".format(self.protocol.panel_caption)
         F.value.set_values([])
         F.wMain.values = F.value.get()
 
@@ -169,5 +191,14 @@ class BobApplication(npyscreen.NPSApp):
 
 
 if __name__ == "__main__":
-    App = BobApplication()
+    parser = argparse.ArgumentParser(description='Bob - Simple and safe instant messaging')
+    parser.add_argument('-l', '--listen', action='store_true', help='Start in server mode (listen on specified port)')
+    parser.add_argument('--port', '-p', default=1306, help='Port used for communication (to listen to, or to connect to)')
+    parser.add_argument('hostname', nargs='?', default='localhost', help='Host to which connect when running in client mode')
+
+    args = parser.parse_args()
+
+    protocol = Server(args.port) if args.listen else Client(args.hostname, args.port)
+    protocol.start()
+    App = BobApplication(protocol)
     App.run()
