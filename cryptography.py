@@ -1,16 +1,54 @@
+class NotThisEncryptionSerialized(Exception):
+    pass
+
+
+class NoneEncryption(object):
+    ENCRYPTION_NAME = 'None'
+
+    def encrypt(self, plaintext):
+        return plaintext
+
+    def decrypt(self, ciphertext):
+        return ciphertext
+
+    def serialize(self):
+        return {'name': self.ENCRYPTION_NAME}
+
+    @classmethod
+    def deserialize(cls, encryption_params):
+        if encryption_params['name'] != cls.ENCRYPTION_NAME:
+            raise NotThisEncryptionSerialized()
+
+        return NoneEncryption()
+
+    def __str__(self):
+        return self.ENCRYPTION_NAME
+
+
 class CaesarCipher(object):
+    ENCRYPTION_NAME = 'Caesar cipher'
     LOWER_LETTERS = 'abcdefghijklmnopqrstuvwxyz'
     UPPER_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
     DIGITS = '0123456789'
 
     def __init__(self, key):
-        self.key = key
+        self.key = int(key)
 
     def encrypt(self, plaintext):
         return ''.join(self._encrypt_character(c) for c in plaintext)
 
     def decrypt(self, ciphertext):
         return ''.join(self._decrypt_character(c) for c in ciphertext)
+
+    def serialize(self):
+        return {'name': self.ENCRYPTION_NAME, 'key': self.key}
+
+    @classmethod
+    def deserialize(cls, encryption_params):
+        if encryption_params['name'] != cls.ENCRYPTION_NAME:
+            raise NotThisEncryptionSerialized()
+
+        return CaesarCipher(key=encryption_params['key'])
 
     def _encrypt_character(self, character):
         if character in self.LOWER_LETTERS:
@@ -45,5 +83,5 @@ class CaesarCipher(object):
         return character
 
     def __str__(self):
-        return 'Caesar cipher (key: {})'.format(self.key)
+        return '{} (key: {})'.format(self.ENCRYPTION_NAME, self.key)
 

@@ -13,3 +13,8 @@ class ConnectionEstablishedMessage(object):
 
     def get_formatted_remote_address(self):
         return '{}:{}'.format(self.remote_address[0], self.remote_address[1])
+
+
+class ChangeEncryptionMessage(object):
+    def __init__(self, encryption):
+        self.encryption = encryption

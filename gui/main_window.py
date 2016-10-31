@@ -1,11 +1,12 @@
 import npyscreen
 
-from messages import TextMessage, DisconnectMessage, ConnectionEstablishedMessage
+from messages import TextMessage, DisconnectMessage, ConnectionEstablishedMessage, ChangeEncryptionMessage
 
+from cryptography import CaesarCipher, NoneEncryption
 from gui.command_box import HistoryRemeberingTextCommandBox
 from gui.highlightning import MessageHighlightMultiLine
-from gui.controler import SendMessageActionController
-from gui.controler import Message
+from gui.controler import SendMessageActionController, Message
+from gui.cipher_configuration import CaesarEncryptionConfigurationPopup
 
 
 class MainWindow(npyscreen.FormMuttActiveWithMenus):
@@ -16,6 +17,8 @@ class MainWindow(npyscreen.FormMuttActiveWithMenus):
     def __init__(self, protocol):
         super(MainWindow, self).__init__()
         self.protocol = protocol
+        self.status_message = ''
+        self.encryption_message = ''
 
     def create(self):
         super(MainWindow, self).create()
@@ -24,13 +27,13 @@ class MainWindow(npyscreen.FormMuttActiveWithMenus):
         menu = self.new_menu(name='Menu')
         menu.addItem('Send file')
         encryption = menu.addNewSubmenu('Encryption')
-        encryption.addItem('None')
-        encryption.addItem('Caesar Cipher')
+        encryption.addItem('None', self.configure_none_encryption)
+        encryption.addItem('Caesar Cipher', self.configure_caesar_encryption)
         menu.addItem('Exit', self.exit_application)
         self.editw = 3
 
     def while_waiting(self):
-        while (not self.protocol.queue.empty()):
+        while not self.protocol.queue.empty():
             self.dispatch(self.protocol.queue.get())
 
     def dispatch(self, message):
@@ -41,12 +44,20 @@ class MainWindow(npyscreen.FormMuttActiveWithMenus):
             self.exit_application()
         if isinstance(message, ConnectionEstablishedMessage):
             status_message = 'connected with {}'.format(message.get_formatted_remote_address())
-            self.refresh_statusbar(status_message, 'None')
+            self.refresh_statusbar(status_message=status_message)
+        if isinstance(message, ChangeEncryptionMessage):
+            self._set_encryption(message.encryption, set_by_remote=True)
 
-    def refresh_statusbar(self, status_message, encryption_message):
-            self.wStatus2.value = "{}: {}         Encryption: {} ".format(self.protocol.myself_name,
-                                                                          status_message, encryption_message)
-            self.wStatus2.display()
+    def refresh_statusbar(self, status_message=None, encryption_message=None):
+        status_message = status_message or self.status_message
+        self.status_message = status_message
+
+        encryption_message = encryption_message or self.encryption_message
+        self.encryption_message = encryption_message
+
+        self.wStatus2.value = "{}: {}         Encryption: {} ".format(self.protocol.myself_name,
+                                                                      status_message, encryption_message)
+        self.wStatus2.display()
 
     def send_message(self, message):
         self.protocol.send_message(message)
@@ -57,3 +68,21 @@ class MainWindow(npyscreen.FormMuttActiveWithMenus):
         self.parentApp.setNextForm(None)
         self.editing = False
         self.parentApp.switchFormNow()
+
+    def configure_caesar_encryption(self):
+        configure_popup = CaesarEncryptionConfigurationPopup()
+        configure_popup.edit()
+        if configure_popup.value:
+            key = configure_popup.get_key()
+            self._set_encryption(CaesarCipher(key=key), set_by_remote=False)
+
+    def configure_none_encryption(self):
+        self._set_encryption(NoneEncryption(), set_by_remote=False)
+
+    def _set_encryption(self, encryption, set_by_remote=False):
+        self.current_encryption = encryption
+        self.refresh_statusbar(encryption_message=str(encryption))
+
+        if not set_by_remote:
+            self.protocol.request_encryption(encryption)
+

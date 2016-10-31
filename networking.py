@@ -3,22 +3,25 @@ from threading import Thread
 from Queue import Queue
 import json
 
-from messages import TextMessage, DisconnectMessage, ConnectionEstablishedMessage
-from cryptography import CaesarCipher
+from messages import TextMessage, DisconnectMessage, ConnectionEstablishedMessage, ChangeEncryptionMessage
+from cryptography import CaesarCipher, NoneEncryption, NotThisEncryptionSerialized
 
 
 TEXT_MESSAGE_TYPE = 'TEXT_MESSAGE'
+CHANGE_ENCRYPTION_MESSAGE_TYPE = 'CHANGE_ENCRYPTION'
 
 
 class NetworkProtocol(Thread):
-    def __init__(self):
+    KNOWN_ENCRYPTIONS = [CaesarCipher, NoneEncryption]
+
+    def __init__(self, encryption):
         super(NetworkProtocol, self).__init__()
         self.queue = Queue()
         self.daemon = True
-        self.cipher = CaesarCipher(key=3)
+        self.encryption = encryption
 
     def send_message(self, message):
-        encrypted = self.cipher.encrypt(message)
+        encrypted = self.encryption.encrypt(message)
         self._send({'type': TEXT_MESSAGE_TYPE, 'content': encrypted})
 
     def _send(self, message_dict):
@@ -27,6 +30,10 @@ class NetworkProtocol(Thread):
     def disconnect(self):
         if hasattr(self, 'socket'):
             self.socket.close()
+
+    def request_encryption(self, encryption):
+        self._send({'type': CHANGE_ENCRYPTION_MESSAGE_TYPE, 'encryption_params': encryption.serialize()})
+        self.encryption = encryption
 
     def main_loop(self):
         while True:
@@ -38,7 +45,17 @@ class NetworkProtocol(Thread):
 
     def _dispatch(self, message_dict):
         if message_dict['type'] == TEXT_MESSAGE_TYPE:
-            self.queue.put(TextMessage(self.cipher.decrypt(message_dict['content'])))
+            self.queue.put(TextMessage(self.encryption.decrypt(message_dict['content'])))
+        if message_dict['type'] == CHANGE_ENCRYPTION_MESSAGE_TYPE:
+            self.encryption = self._dispatch_change_encryption(message_dict)
+            self.queue.put(ChangeEncryptionMessage(self.encryption))
+
+    def _dispatch_change_encryption(self, message_dict):
+        for known_encryption in self.KNOWN_ENCRYPTIONS:
+            try:
+                return known_encryption.deserialize(message_dict['encryption_params'])
+            except NotThisEncryptionSerialized:
+                pass
 
 
 class Server(NetworkProtocol):
@@ -46,8 +63,8 @@ class Server(NetworkProtocol):
     participant_name = 'Client'
     myself_name = 'Server'
 
-    def __init__(self, local_port):
-        super(Server, self).__init__()
+    def __init__(self, local_port, encryption):
+        super(Server, self).__init__(encryption)
         self.local_port = local_port
 
     def disconnect(self):
@@ -69,8 +86,8 @@ class Client(NetworkProtocol):
     participant_name = 'Server'
     myself_name = 'Client'
 
-    def __init__(self, hostname, remote_port):
-        super(Client, self).__init__()
+    def __init__(self, hostname, remote_port, encryption):
+        super(Client, self).__init__(encryption)
         self.remote_port = remote_port
         self.hostname = hostname
 
