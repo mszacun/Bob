@@ -5,7 +5,6 @@ import npyscreen
 
 from networking import Client, Server
 from gui.application import BobApplication
-from cryptography import NoneEncryption
 
 
 
@@ -19,8 +18,7 @@ if __name__ == "__main__":
     args = parser.parse_args()
     port = int(args.port)
 
-    encryption = NoneEncryption()
-    protocol = Server(port, encryption) if args.listen else Client(args.hostname, port, encryption)
+    protocol = Server(port) if args.listen else Client(args.hostname, port)
     protocol.start()
-    App = BobApplication(protocol)
-    App.run()
+    app = BobApplication(protocol)
+    app.run()

@@ -2,6 +2,8 @@ import npyscreen
 import re
 import curses
 
+from gui.popups import MessageDetailsPopup
+
 
 class MessageHighlightTextfield(npyscreen.Textfield):
     MESSAGE_REGEXP = re.compile('(\d+:\d+:\d+ - )(\w+: )(.*)')
@@ -38,5 +40,6 @@ class MessageHighlightMultiLine(npyscreen.MultiLine):
         })
 
     def show_message_details(self, pressed_key):
-        seleted_message = self.values[self.cursor_line]
-        npyscreen.notify_confirm(str(seleted_message), title='Message details', editw=1)
+        selected_message = self.values[self.cursor_line]
+        popup = MessageDetailsPopup(selected_message)
+        popup.edit()

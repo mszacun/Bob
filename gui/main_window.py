@@ -6,7 +6,7 @@ from cryptography import CaesarCipher, NoneEncryption
 from gui.command_box import HistoryRemeberingTextCommandBox
 from gui.highlightning import MessageHighlightMultiLine
 from gui.controler import SendMessageActionController, Message
-from gui.cipher_configuration import CaesarEncryptionConfigurationPopup
+from gui.popups import CaesarEncryptionConfigurationPopup
 
 
 class MainWindow(npyscreen.FormMuttActiveWithMenus):
@@ -14,11 +14,13 @@ class MainWindow(npyscreen.FormMuttActiveWithMenus):
     ACTION_CONTROLLER = SendMessageActionController
     MAIN_WIDGET_CLASS = MessageHighlightMultiLine
 
-    def __init__(self, protocol):
-        super(MainWindow, self).__init__()
+    def __init__(self, protocol, encryption):
         self.protocol = protocol
+        self.current_encryption = encryption
         self.status_message = ''
         self.encryption_message = ''
+
+        super(MainWindow, self).__init__()
 
     def create(self):
         super(MainWindow, self).create()
@@ -32,13 +34,16 @@ class MainWindow(npyscreen.FormMuttActiveWithMenus):
         menu.addItem('Exit', self.exit_application)
         self.editw = 3
 
+        self.refresh_statusbar(self.protocol.initial_panel_caption, str(self.encryption_message))
+
     def while_waiting(self):
         while not self.protocol.queue.empty():
             self.dispatch(self.protocol.queue.get())
 
     def dispatch(self, message):
         if isinstance(message, TextMessage):
-            self.wMain.values.append(Message(message.content, self.protocol.participant_name))
+            message = Message(self.current_encryption, ciphertext=message.content, sender=self.protocol.participant_name)
+            self.wMain.values.append(message)
             self.wMain.display()
         if isinstance(message, DisconnectMessage):
             self.exit_application()
@@ -59,8 +64,11 @@ class MainWindow(npyscreen.FormMuttActiveWithMenus):
                                                                       status_message, encryption_message)
         self.wStatus2.display()
 
-    def send_message(self, message):
-        self.protocol.send_message(message)
+    def send_message(self, message_text):
+        message = Message(self.current_encryption, plaintext=message_text)
+        self.protocol.send_message(message.ciphertext)
+        self.wMain.values.append(message)
+        self.wMain.display()
 
     def exit_application(self):
         self.protocol.disconnect()

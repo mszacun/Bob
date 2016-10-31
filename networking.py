@@ -14,15 +14,13 @@ CHANGE_ENCRYPTION_MESSAGE_TYPE = 'CHANGE_ENCRYPTION'
 class NetworkProtocol(Thread):
     KNOWN_ENCRYPTIONS = [CaesarCipher, NoneEncryption]
 
-    def __init__(self, encryption):
+    def __init__(self):
         super(NetworkProtocol, self).__init__()
         self.queue = Queue()
         self.daemon = True
-        self.encryption = encryption
 
     def send_message(self, message):
-        encrypted = self.encryption.encrypt(message)
-        self._send({'type': TEXT_MESSAGE_TYPE, 'content': encrypted})
+        self._send({'type': TEXT_MESSAGE_TYPE, 'content': message})
 
     def _send(self, message_dict):
         self.socket.sendall(json.dumps(message_dict))
@@ -45,10 +43,10 @@ class NetworkProtocol(Thread):
 
     def _dispatch(self, message_dict):
         if message_dict['type'] == TEXT_MESSAGE_TYPE:
-            self.queue.put(TextMessage(self.encryption.decrypt(message_dict['content'])))
+            self.queue.put(TextMessage(message_dict['content']))
         if message_dict['type'] == CHANGE_ENCRYPTION_MESSAGE_TYPE:
-            self.encryption = self._dispatch_change_encryption(message_dict)
-            self.queue.put(ChangeEncryptionMessage(self.encryption))
+            encryption = self._dispatch_change_encryption(message_dict)
+            self.queue.put(ChangeEncryptionMessage(encryption))
 
     def _dispatch_change_encryption(self, message_dict):
         for known_encryption in self.KNOWN_ENCRYPTIONS:
@@ -63,8 +61,8 @@ class Server(NetworkProtocol):
     participant_name = 'Client'
     myself_name = 'Server'
 
-    def __init__(self, local_port, encryption):
-        super(Server, self).__init__(encryption)
+    def __init__(self, local_port):
+        super(Server, self).__init__()
         self.local_port = local_port
 
     def disconnect(self):
@@ -86,8 +84,8 @@ class Client(NetworkProtocol):
     participant_name = 'Server'
     myself_name = 'Client'
 
-    def __init__(self, hostname, remote_port, encryption):
-        super(Client, self).__init__(encryption)
+    def __init__(self, hostname, remote_port):
+        super(Client, self).__init__()
         self.remote_port = remote_port
         self.hostname = hostname
 
