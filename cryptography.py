@@ -32,7 +32,7 @@ class CaesarCipher(object):
     DIGITS = '0123456789'
 
     def __init__(self, key):
-        self.key = int(key)
+        self.key = key
 
     def encrypt(self, plaintext):
         return ''.join(self._encrypt_character(c) for c in plaintext)
