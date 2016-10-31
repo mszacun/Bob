@@ -1,6 +1,7 @@
 import npyscreen
 
-from messages import TextMessage, DisconnectMessage, ConnectionEstablishedMessage, ChangeEncryptionMessage
+from messages import TextMessage, DisconnectMessage, ConnectionEstablishedMessage, ChangeEncryptionMessage, \
+     OfferFileTransmissionMessage
 
 from cryptography import CaesarCipher, NoneEncryption
 from gui.command_box import HistoryRemeberingTextCommandBox
@@ -51,6 +52,8 @@ class MainWindow(npyscreen.FormMuttActiveWithMenus):
             self.refresh_statusbar(status_message=status_message)
         if isinstance(message, ChangeEncryptionMessage):
             self._set_encryption(message.encryption, set_by_remote=True)
+        if isinstance(message, OfferFileTransmissionMessage):
+            self._ask_to_accept_file_transmission(message.filename, message.number_of_bytes)
 
     def refresh_statusbar(self, status_message=None, encryption_message=None):
         status_message = status_message or self.status_message
@@ -78,6 +81,7 @@ class MainWindow(npyscreen.FormMuttActiveWithMenus):
 
     def send_file(self):
         file_to_send = npyscreen.selectFile('~/', must_exist=True, confirm_if_exists=False)
+        self.protocol.offer_file_transmission(file_to_send)
 
     def configure_caesar_encryption(self):
         configure_popup = CaesarEncryptionConfigurationPopup()
@@ -95,4 +99,11 @@ class MainWindow(npyscreen.FormMuttActiveWithMenus):
 
         if not set_by_remote:
             self.protocol.request_encryption(encryption)
+
+    def _ask_to_accept_file_transmission(self, filename, number_of_bytes):
+        message = '{} wants to send you file {} ({} bytes)\nDo you accept?'.format(self.protocol.participant_name,
+                                                                                   filename, number_of_bytes)
+        if npyscreen.notify_yes_no(message, 'File transfer offer'):
+            save_destination = npyscreen.selectFile('/tmp/', must_exist=False, confirm_if_exists=True)
+            self.protocol.receive_file(save_destination, number_of_bytes)
 
