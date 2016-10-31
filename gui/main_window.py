@@ -43,8 +43,7 @@ class MainWindow(npyscreen.FormMuttActiveWithMenus):
     def dispatch(self, message):
         if isinstance(message, TextMessage):
             message = Message(self.current_encryption, ciphertext=message.content, sender=self.protocol.participant_name)
-            self.wMain.values.append(message)
-            self.wMain.display()
+            self.wMain.add_message(message)
         if isinstance(message, DisconnectMessage):
             self.exit_application()
         if isinstance(message, ConnectionEstablishedMessage):
@@ -68,8 +67,7 @@ class MainWindow(npyscreen.FormMuttActiveWithMenus):
         if message_text:
             message = Message(self.current_encryption, plaintext=message_text)
             self.protocol.send_message(message.ciphertext)
-            self.wMain.values.append(message)
-            self.wMain.display()
+            self.wMain.add_message(message)
 
     def exit_application(self):
         self.protocol.disconnect()

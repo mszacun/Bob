@@ -32,6 +32,11 @@ class MessageHighlightTextfield(npyscreen.Textfield):
 class MessageHighlightMultiLine(npyscreen.MultiLine):
     _contained_widgets = MessageHighlightTextfield
 
+    def __init__(self, *args, **kwargs):
+        kwargs['slow_scroll'] = True
+
+        super(MessageHighlightMultiLine, self).__init__(*args, **kwargs)
+
     def set_up_handlers(self):
         super(MessageHighlightMultiLine, self).set_up_handlers()
         self.handlers.update({
@@ -43,3 +48,9 @@ class MessageHighlightMultiLine(npyscreen.MultiLine):
         selected_message = self.values[self.cursor_line]
         popup = MessageDetailsPopup(selected_message)
         popup.edit()
+
+    def add_message(self, message):
+        self.values.append(message)
+        self.h_cursor_page_down(None)
+        self.display()
+
