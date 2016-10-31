@@ -34,7 +34,7 @@ class MainWindow(npyscreen.FormMuttActiveWithMenus):
         menu.addItem('Exit', self.exit_application)
         self.editw = 3
 
-        self.refresh_statusbar(self.protocol.initial_panel_caption, str(self.encryption_message))
+        self.refresh_statusbar(self.protocol.initial_panel_caption, str(self.current_encryption))
 
     def while_waiting(self):
         while not self.protocol.queue.empty():
