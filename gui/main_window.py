@@ -27,7 +27,7 @@ class MainWindow(npyscreen.FormMuttActiveWithMenus):
         self.keypress_timeout = 1
 
         menu = self.new_menu(name='Menu')
-        menu.addItem('Send file')
+        menu.addItem('Send file', self.send_file)
         encryption = menu.addNewSubmenu('Encryption')
         encryption.addItem('None', self.configure_none_encryption)
         encryption.addItem('Caesar Cipher', self.configure_caesar_encryption)
@@ -75,6 +75,9 @@ class MainWindow(npyscreen.FormMuttActiveWithMenus):
         self.parentApp.setNextForm(None)
         self.editing = False
         self.parentApp.switchFormNow()
+
+    def send_file(self):
+        file_to_send = npyscreen.selectFile('~/', must_exist=True, confirm_if_exists=False)
 
     def configure_caesar_encryption(self):
         configure_popup = CaesarEncryptionConfigurationPopup()
