@@ -65,10 +65,11 @@ class MainWindow(npyscreen.FormMuttActiveWithMenus):
         self.wStatus2.display()
 
     def send_message(self, message_text):
-        message = Message(self.current_encryption, plaintext=message_text)
-        self.protocol.send_message(message.ciphertext)
-        self.wMain.values.append(message)
-        self.wMain.display()
+        if message_text:
+            message = Message(self.current_encryption, plaintext=message_text)
+            self.protocol.send_message(message.ciphertext)
+            self.wMain.values.append(message)
+            self.wMain.display()
 
     def exit_application(self):
         self.protocol.disconnect()
