@@ -8,6 +8,7 @@ from gui.command_box import HistoryRemeberingTextCommandBox
 from gui.highlightning import MessageHighlightMultiLine
 from gui.controler import SendMessageActionController, Message
 from gui.popups import CaesarEncryptionConfigurationPopup, FileTransferProgressPopup
+from utils import humanize_bytes
 
 
 class MainWindow(npyscreen.FormMuttActiveWithMenus):
@@ -101,8 +102,9 @@ class MainWindow(npyscreen.FormMuttActiveWithMenus):
             self.protocol.request_encryption(encryption)
 
     def _ask_to_accept_file_transmission(self, filename, number_of_bytes):
-        message = '{} wants to send you file {} ({} bytes)\nDo you accept?'.format(self.protocol.participant_name,
-                                                                                   filename, number_of_bytes)
+        message = '{} wants to send you file {} ({})\nDo you accept?'.format(self.protocol.participant_name,
+                                                                             filename,
+                                                                             humanize_bytes(number_of_bytes))
         if npyscreen.notify_yes_no(message, 'File transfer offer'):
             save_destination = npyscreen.selectFile('/tmp/', must_exist=False, confirm_if_exists=True)
             self.progress_popup = FileTransferProgressPopup(filename, number_of_bytes, self.protocol)
