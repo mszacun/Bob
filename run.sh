@@ -8,7 +8,7 @@ fi
 
 tmux send-keys -t :.1 "(cd ~/bob; python2 bob.py -l)"
 tmux send-keys -t :.1 Enter
-sleep 0.3
+sleep 0.5
 
 tmux send-keys -t :.2 "(cd ~/bob; python2 bob.py)"
 tmux send-keys -t :.2 Enter
