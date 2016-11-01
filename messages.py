@@ -24,3 +24,8 @@ class OfferFileTransmissionMessage(object):
     def __init__(self, filename, number_of_bytes):
         self.filename = filename
         self.number_of_bytes = number_of_bytes
+
+
+class FileChunkMessage(object):
+    def __init__(self, number_of_bytes_received_so_far):
+        self.number_of_bytes_received_so_far = number_of_bytes_received_so_far

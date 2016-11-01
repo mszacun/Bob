@@ -1,13 +1,13 @@
 import npyscreen
 
 from messages import TextMessage, DisconnectMessage, ConnectionEstablishedMessage, ChangeEncryptionMessage, \
-     OfferFileTransmissionMessage
+     OfferFileTransmissionMessage, FileChunkMessage
 
 from cryptography import CaesarCipher, NoneEncryption
 from gui.command_box import HistoryRemeberingTextCommandBox
 from gui.highlightning import MessageHighlightMultiLine
 from gui.controler import SendMessageActionController, Message
-from gui.popups import CaesarEncryptionConfigurationPopup
+from gui.popups import CaesarEncryptionConfigurationPopup, FileTransferProgressPopup
 
 
 class MainWindow(npyscreen.FormMuttActiveWithMenus):
@@ -105,5 +105,7 @@ class MainWindow(npyscreen.FormMuttActiveWithMenus):
                                                                                    filename, number_of_bytes)
         if npyscreen.notify_yes_no(message, 'File transfer offer'):
             save_destination = npyscreen.selectFile('/tmp/', must_exist=False, confirm_if_exists=True)
+            self.progress_popup = FileTransferProgressPopup(filename, number_of_bytes, self.protocol)
             self.protocol.receive_file(save_destination, number_of_bytes)
+            self.progress_popup.edit()
 

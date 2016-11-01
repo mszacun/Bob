@@ -7,7 +7,7 @@ import base64
 from time import sleep
 
 from messages import TextMessage, DisconnectMessage, ConnectionEstablishedMessage, ChangeEncryptionMessage, \
-     OfferFileTransmissionMessage
+     OfferFileTransmissionMessage, FileChunkMessage
 from cryptography import CaesarCipher, NoneEncryption, NotThisEncryptionSerialized
 
 
@@ -41,8 +41,6 @@ class IncomingFileTransfer(object):
 
 
 class OutcomingFileTransfer(object):
-    CHUNK_SIZE = 1024
-
     def __init__(self, filepath):
         self.filepath = filepath
 
@@ -52,12 +50,15 @@ class OutcomingFileTransfer(object):
     def close(self):
         self.file.close()
 
-    def get_chunk(self):
-        return base64.b64encode(self.file.read(self.CHUNK_SIZE))
+    def get_chunk(self, chunk_size):
+        return base64.b64encode(self.file.read(chunk_size))
 
 
 class NetworkProtocol(Thread):
     KNOWN_ENCRYPTIONS = [CaesarCipher, NoneEncryption]
+    FILE_CHUNK_SIZE = 2048
+    RECV_BUFFER_SIZE = 4096
+    BETWEEN_FILE_CHUNKS_TIME = 0.05
 
     def __init__(self):
         super(NetworkProtocol, self).__init__()
@@ -91,7 +92,7 @@ class NetworkProtocol(Thread):
 
     def main_loop(self):
         while True:
-            data = self.socket.recv(2048)
+            data = self.socket.recv(self.RECV_BUFFER_SIZE)
             if not data:
                 self.queue.put(DisconnectMessage())
             else:
@@ -120,18 +121,19 @@ class NetworkProtocol(Thread):
 
     def _send_file(self):
         self.outcoming_file_transfer.open()
-        chunk = self.outcoming_file_transfer.get_chunk()
+        chunk = self.outcoming_file_transfer.get_chunk(self.FILE_CHUNK_SIZE)
 
         while chunk:
             self._send({'type': FILE_CHUNK_MESSAGE_TYPE, 'content': chunk})
-            chunk = self.outcoming_file_transfer.get_chunk()
-            sleep(0.01)
+            chunk = self.outcoming_file_transfer.get_chunk(self.FILE_CHUNK_SIZE)
+            sleep(self.BETWEEN_FILE_CHUNKS_TIME)
 
         self.outcoming_file_transfer.close()
         self.outcoming_file_transfer = None
 
     def _recive_file_chunk(self, message_dict):
         self.incoming_file_transfer.write(message_dict['content'])
+        self.queue.put(FileChunkMessage(self.incoming_file_transfer.received_bytes))
         if self.incoming_file_transfer.is_completed:
             self.incoming_file_transfer.close()
             self.incoming_file_transfer = None

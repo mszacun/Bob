@@ -2,6 +2,7 @@ import argparse
 import re
 import curses
 import npyscreen
+import logging
 
 from networking import Client, Server
 from gui.application import BobApplication
@@ -17,6 +18,12 @@ if __name__ == "__main__":
 
     args = parser.parse_args()
     port = int(args.port)
+
+    logger = logging.getLogger('bob')
+    logger.setLevel(logging.DEBUG)
+    fh = logging.FileHandler('/tmp/bob.log')
+    fh.setLevel(logging.DEBUG)
+    logger.addHandler(fh)
 
     protocol = Server(port) if args.listen else Client(args.hostname, port)
     protocol.start()
