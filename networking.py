@@ -56,9 +56,9 @@ class OutcomingFileTransfer(object):
 
 class NetworkProtocol(Thread):
     KNOWN_ENCRYPTIONS = [CaesarCipher, NoneEncryption]
-    FILE_CHUNK_SIZE = 2048
-    RECV_BUFFER_SIZE = 4096
-    BETWEEN_FILE_CHUNKS_TIME = 0.05
+    FILE_CHUNK_SIZE = 65668
+    RECV_BUFFER_SIZE = 131336
+    BETWEEN_FILE_CHUNKS_TIME = 0.065
 
     def __init__(self):
         super(NetworkProtocol, self).__init__()
