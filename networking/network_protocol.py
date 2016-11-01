@@ -1,11 +1,10 @@
-import socket
 from threading import Thread
 from Queue import Queue
 import json
 import os
-import base64
 from time import sleep
 
+from networking.file_transfer import IncomingFileTransfer, OutcomingFileTransfer
 from messages import TextMessage, DisconnectMessage, ConnectionEstablishedMessage, ChangeEncryptionMessage, \
      OfferFileTransmissionMessage, FileChunkMessage
 from cryptography import CaesarCipher, NoneEncryption, NotThisEncryptionSerialized
@@ -16,42 +15,6 @@ CHANGE_ENCRYPTION_MESSAGE_TYPE = 'CHANGE_ENCRYPTION'
 OFFER_FILE_TRANSMISSION_MESSAGE_TYPE = 'OFFER_FILE_TRANSMISSION'
 ACCEPT_FILE_TRANSMISSION_MESSAGE_TYPE = 'ACCEPT_FILE_TRANSMISSION'
 FILE_CHUNK_MESSAGE_TYPE = 'FILE_CHUNK'
-
-
-class IncomingFileTransfer(object):
-    def __init__(self, filepath, expected_size):
-        self.filepath = filepath
-        self.expected_size = expected_size
-
-    def open(self):
-        self.file = open(self.filepath, 'wb')
-        self.received_bytes = 0
-
-    def close(self):
-        self.file.close()
-
-    def write(self, base64_data):
-        data = base64.b64decode(base64_data)
-        self.file.write(data)
-        self.received_bytes += len(data)
-
-    @property
-    def is_completed(self):
-        return self.received_bytes == self.expected_size
-
-
-class OutcomingFileTransfer(object):
-    def __init__(self, filepath):
-        self.filepath = filepath
-
-    def open(self):
-        self.file = open(self.filepath, 'rb')
-
-    def close(self):
-        self.file.close()
-
-    def get_chunk(self, chunk_size):
-        return base64.b64encode(self.file.read(chunk_size))
 
 
 class NetworkProtocol(Thread):
@@ -137,45 +100,3 @@ class NetworkProtocol(Thread):
         if self.incoming_file_transfer.is_completed:
             self.incoming_file_transfer.close()
             self.incoming_file_transfer = None
-
-
-class Server(NetworkProtocol):
-    initial_panel_caption = 'waiting for connection...'
-    participant_name = 'Client'
-    myself_name = 'Server'
-
-    def __init__(self, local_port):
-        super(Server, self).__init__()
-        self.local_port = local_port
-
-    def disconnect(self):
-        super(Server, self).disconnect()
-        self.server_socket.close()
-
-    def run(self):
-        self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.server_socket.bind(('0.0.0.0', self.local_port))
-        self.server_socket.listen(5)
-        self.socket, self.client_address = self.server_socket.accept()
-
-        self.queue.put(ConnectionEstablishedMessage(self.client_address))
-
-        self.main_loop()
-
-class Client(NetworkProtocol):
-    initial_panel_caption = 'connecting to server...'
-    participant_name = 'Server'
-    myself_name = 'Client'
-
-    def __init__(self, hostname, remote_port):
-        super(Client, self).__init__()
-        self.remote_port = remote_port
-        self.hostname = hostname
-
-    def run(self):
-        self.socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        self.socket.connect((self.hostname, self.remote_port))
-
-        self.queue.put(ConnectionEstablishedMessage((self.hostname, self.remote_port)))
-
-        self.main_loop()

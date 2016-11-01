@@ -4,10 +4,9 @@ import curses
 import npyscreen
 import logging
 
-from networking import Client, Server
+from networking.client import Client
+from networking.server import Server
 from gui.application import BobApplication
-
-
 
 
 if __name__ == "__main__":
