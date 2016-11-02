@@ -8,7 +8,13 @@ class NoneEncryption(object):
     def encrypt(self, plaintext):
         return plaintext
 
+    def encrypt_binary(self, plaintext):
+        return plaintext
+
     def decrypt(self, ciphertext):
+        return ciphertext
+
+    def decrypt_binary(self, ciphertext):
         return ciphertext
 
     def serialize(self):
@@ -37,8 +43,14 @@ class CaesarCipher(object):
     def encrypt(self, plaintext):
         return ''.join(self._encrypt_character(c) for c in plaintext)
 
+    def encrypt_binary(self, plaintext):
+        return ''.join(self._shift_binary_character(c, self.key) for c in plaintext)
+
     def decrypt(self, ciphertext):
         return ''.join(self._decrypt_character(c) for c in ciphertext)
+
+    def decrypt_binary(self, ciphertext):
+        return ''.join(self._shift_binary_character(c, -self.key) for c in ciphertext)
 
     def serialize(self):
         return {'name': self.ENCRYPTION_NAME, 'key': self.key}
@@ -66,9 +78,15 @@ class CaesarCipher(object):
         index = alphabet.index(character)
         shifted = index + shift
         redundant_shifted = shifted + len(alphabet) # Removes problem with negative numbers during decrypting
-        based = shifted % len(alphabet)
+        based = redundant_shifted % len(alphabet)
 
         return alphabet[based]
+
+    def _shift_binary_character(self, character, shift):
+        shifted = ord(character) + shift
+        redundant_shifted = shifted + 256
+
+        return chr(redundant_shifted % 256)
 
     def _decrypt_character(self, character):
         if character in self.LOWER_LETTERS:

@@ -42,14 +42,14 @@ class NetworkProtocol(Thread):
         self._send({'type': CHANGE_ENCRYPTION_MESSAGE_TYPE, 'encryption_params': encryption.serialize()})
         self.encryption = encryption
 
-    def offer_file_transmission(self, filepath):
+    def offer_file_transmission(self, filepath, encryption):
         message = {'type': OFFER_FILE_TRANSMISSION_MESSAGE_TYPE, 'filename': os.path.basename(filepath),
                    'number_of_bytes': os.path.getsize(filepath)}
         self._send(message)
-        self.outcoming_file_transfer = OutcomingFileTransfer(filepath)
+        self.outcoming_file_transfer = OutcomingFileTransfer(filepath, encryption)
 
-    def receive_file(self, save_destination, expected_number_of_bytes):
-        self.incoming_file_transfer = IncomingFileTransfer(save_destination, expected_number_of_bytes)
+    def receive_file(self, save_destination, expected_number_of_bytes, encryption):
+        self.incoming_file_transfer = IncomingFileTransfer(save_destination, expected_number_of_bytes, encryption)
         self.incoming_file_transfer.open()
         self._send({'type': ACCEPT_FILE_TRANSMISSION_MESSAGE_TYPE})
 

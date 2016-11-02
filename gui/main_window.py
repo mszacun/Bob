@@ -82,7 +82,7 @@ class MainWindow(npyscreen.FormMuttActiveWithMenus):
 
     def send_file(self):
         file_to_send = npyscreen.selectFile('~/', must_exist=True, confirm_if_exists=False)
-        self.protocol.offer_file_transmission(file_to_send)
+        self.protocol.offer_file_transmission(file_to_send, self.current_encryption)
 
     def configure_caesar_encryption(self):
         configure_popup = CaesarEncryptionConfigurationPopup()
@@ -108,6 +108,6 @@ class MainWindow(npyscreen.FormMuttActiveWithMenus):
         if npyscreen.notify_yes_no(message, 'File transfer offer'):
             save_destination = npyscreen.selectFile('/tmp/', must_exist=False, confirm_if_exists=True)
             self.progress_popup = FileTransferProgressPopup(filename, number_of_bytes, self.protocol)
-            self.protocol.receive_file(save_destination, number_of_bytes)
+            self.protocol.receive_file(save_destination, number_of_bytes, self.current_encryption)
             self.progress_popup.edit()
 
