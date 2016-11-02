@@ -92,7 +92,7 @@ class MessageDetailsPopup(npyscreen.Popup):
         super(MessageDetailsPopup, self).__init__(name='Message details')
 
     def create(self):
-        self.add(npyscreen.TitleFixedText, name='Author', value=self.message.sender)
+        self.add(npyscreen.TitleFixedText, name='Sender', value=self.message.sender)
         self.add(npyscreen.TitleFixedText, name='Time', value=self.message.formatted_time)
         self.add(npyscreen.TitleFixedText, name='Encryption', value=str(self.message.encryption))
         self.plaintext = self.add(PagerBoxed, name='Plaintext', values=self.message.plaintext.split('\n'),
