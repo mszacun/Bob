@@ -39,6 +39,7 @@ class PagerBoxed(npyscreen.BoxTitle):
 
 class MessageDetailsPopup(npyscreen.Popup):
     DEFAULT_LINES = 24
+    DEFAULT_COLUMNS = 90
 
     def __init__(self, message):
         self.preserve_selected_widget = True
@@ -50,8 +51,8 @@ class MessageDetailsPopup(npyscreen.Popup):
         self.add(npyscreen.TitleFixedText, name='Author', value=self.message.sender)
         self.add(npyscreen.TitleFixedText, name='Time', value=self.message.formatted_time)
         self.add(npyscreen.TitleFixedText, name='Encryption', value=str(self.message.encryption))
-        self.add(PagerBoxed, name='Plaintext', values=[self.message.plaintext], max_height=7, rely=6)
-        self.add(PagerBoxed, name='Ciphertext', values=[self.message.ciphertext], max_height=7, rely=14)
+        self.add(PagerBoxed, name='Plaintext', values=self.message.plaintext.split('\n'), max_height=7, rely=6)
+        self.add(PagerBoxed, name='Ciphertext', values=self.message.ciphertext.split('\n'), max_height=7, rely=14)
 
 
     def edit(self):

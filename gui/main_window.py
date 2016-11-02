@@ -6,7 +6,8 @@ from messages import TextMessage, DisconnectMessage, ConnectionEstablishedMessag
 from cryptography import CaesarCipher, NoneEncryption
 from gui.command_box import HistoryRemeberingTextCommandBox
 from gui.highlightning import MessageHighlightMultiLine
-from gui.controler import SendMessageActionController, Message
+from gui.controler import SendMessageActionController
+from gui.history import Message, FileTransfer
 from gui.popups import CaesarEncryptionConfigurationPopup, FileTransferProgressPopup
 from utils import humanize_bytes
 
@@ -110,4 +111,8 @@ class MainWindow(npyscreen.FormMuttActiveWithMenus):
             self.progress_popup = FileTransferProgressPopup(filename, number_of_bytes, self.protocol)
             self.protocol.receive_file(save_destination, number_of_bytes, self.current_encryption)
             self.progress_popup.edit()
+
+
+            file_transfer = FileTransfer(self.current_encryption, save_destination, self.protocol.participant_name)
+            self.wMain.add_message(file_transfer)
 
