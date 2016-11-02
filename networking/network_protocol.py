@@ -6,7 +6,7 @@ from time import sleep
 
 from networking.file_transfer import IncomingFileTransfer, OutcomingFileTransfer
 from messages import TextMessage, DisconnectMessage, ConnectionEstablishedMessage, ChangeEncryptionMessage, \
-     OfferFileTransmissionMessage, FileChunkMessage
+     OfferFileTransmissionMessage, FileChunkMessage, FileSendingCompleteMessage
 from cryptography import CaesarCipher, NoneEncryption, NotThisEncryptionSerialized
 
 
@@ -91,8 +91,10 @@ class NetworkProtocol(Thread):
             chunk = self.outcoming_file_transfer.get_chunk(self.FILE_CHUNK_SIZE)
             sleep(self.BETWEEN_FILE_CHUNKS_TIME)
 
+        self.queue.put(FileSendingCompleteMessage(self.outcoming_file_transfer.filepath))
         self.outcoming_file_transfer.close()
         self.outcoming_file_transfer = None
+
 
     def _recive_file_chunk(self, message_dict):
         self.incoming_file_transfer.write(message_dict['content'])
