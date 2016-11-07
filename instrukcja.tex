@@ -1,0 +1,85 @@
+\documentclass{article}
+
+\usepackage{polski}
+\usepackage[english, polish]{babel}
+\usepackage[utf8]{inputenc}
+\usepackage{indentfirst}
+\usepackage{listings}
+
+\title{Kryptografia - aplikacja Bob}
+\date{\today}
+\author{Marcin Szachun}
+
+\begin{document}
+\pagenumbering{gobble}
+\maketitle
+\newpage
+\pagenumbering{arabic}
+
+\tableofcontents
+\newpage
+
+\section{O aplikacji}
+  Aplikacja ,,Bob'' jest konsolową aplikacją służcą do bezpośredniej i~natychmiastowej wymiany wiadomości pomiędzy 
+  dwoma użytkownikami (zwanymi dalej ,,klient'' oraz ,,serwer'')
+  Program został stworzony w języku programowania \emph{Python2}. Do stworzenia konsolowego interfejsu użytkownika
+  została wykorzystana biblioteka \emph{ncurses} wraz z~biblioteką widgetów \emph{npyscreen}.
+  Aplikacja pozwala na wymianę zarówno wiadomości tekstowych jak i~transmisję plików. Wykorzystywane aktualnie
+  szyfrowanie (lub jego brak) może zostać w dowolnej chwili zmienione przez użytkownika. 
+
+\section{Instrukcja obsługi aplikacji}
+  \subsection{Uruchamianie aplikacji}
+    Jak zostało wcześniej powiedziane aplikacja ,,Bob'' wykonana jest w~architekturze klient-serwer. W~związku 
+    z~tym niezbędne jest uruchomienie dwóch instancji aplikacji: jednego serwera oraz klienta. Program należy 
+    uruchomić z~konsoli, w~tym celu należy przejść do katalogu z aplikacją. Serwer uruchaminy jest przy pomocy 
+    komendy:
+      \lstset{language=sh,literate={--}{{-\,-}}1}
+      \begin{lstlisting}
+        ./bob.py --listen
+      \end{lstlisting}
+    Polecenie to uruchamia serwer, który oczekuje na połączenie pochodzące od klienta. Domyślnym portem na którym
+    działa aplikacja oraz nasłuchuje serwer jest port \emph{1306}. Port ten można zmienić przy pomocy opcji 
+    -{}-port:
+      \lstset{language=sh,literate={--}{{-\,-}}1}
+      \begin{lstlisting}
+        ./bob.py --listen --port 8000
+      \end{lstlisting}
+    Po przygotowaniu serwera możliwe jest uruchomienie klienta. W tym celu należy przygotować nową konsolę oraz
+    przejść do katalogu z aplikacją. Klient uruchamiany jest przy pomocy następującej komendy:
+      \lstset{language=sh,literate={--}{{-\,-}}1}
+      \begin{lstlisting}
+        ./bob.py
+      \end{lstlisting}
+    Polecenie to powoduje próbę połączenia klienta z serwerem. Podobnie jak w~przypadku serwera domyślnie 
+    wykorzystywanym portem jest \emph{1306}. Domyślnym hostem, z którym próbuje połączyć się klient jest
+    \emph{localhost}. Zarówno domyślny port oraz host może zostać zmieniony przez użytkownika:
+      \lstset{language=sh,literate={--}{{-\,-}}1}
+      \begin{lstlisting}
+        ./bob.py --port 8000 192.168.1.100
+      \end{lstlisting}
+
+  \subsection{Interfejs aplikacji}
+    Na poniższym zrzucie ekranowym przedstawiono podstawowy interfejs aplikacji (w tym przypadku uruchomionej jako
+    serwer) zaraz po uruchomieniu. Wyróżnione elementy zostały opisane poniżej
+    \subsubsection{Pasek stanu}
+      Pasek stanu zawiera informacje na temat aktualnego statusu aplikacji. Znajdują się tutaj informacje na temat
+      połączenia oraz aktualnie wykorzystywanego szyfrowania
+    \subsubsection{Okienko do wpisywania wiadomości}
+      Domyślnie aktywne po uruchomieniu aplikacji. Możliwe jest tutaj wpisanie treści wiadomości do przekazania
+      rozmówcy. Po wpisaniu wiadomości jej wysłanie odbywa się po wciśnięciu klawisza \emph{Enter}
+    \subsubsection{Historia rozmowy}
+      W oknie tym wyświetlone są wszystkie wiadomości odebrane oraz wysłane. Każda wiadomość opisana jest godziną
+      wysłania (odebrania) oraz nadawcą. Możliwe jest aktywowanie okna historii poprzez naciśnięcie klawisza
+      \emph{Tab}. Po aktywowaniu, możliwe jest wybieranie wiadomości. Po naciśnięciu klawisza \emph{Enter} na 
+      wybranej wiadomości wyświetlone zostanie okienko ze szczegółami wiadomości. Możliwe jest tutaj sprawdzenie
+      szyfrowania, które zostało użyte do wysłania wiadomości oraz podejrzenie powstałego szyfrogramu oraz tekstu
+      jawnego.
+
+      Oprócz wysłanych oraz odebranych wiadomości w oknie historii rozmowy wyświetlane są również informacje na 
+      temat odebranych oraz wysłanych plików. Podobnie jak w przypadku wiadomości możliwe jest wybranie dowolnego
+      z tych wpisów oraz po naciśnięciu klawisza \emph{Enter} podejrzenie szczegółów transmisji plików.
+
+      W zależności od wykorzystywanego szyfrowania oraz od tego czy wybrana została wiadomość czy transfer pliku,
+      szyfrogram oraz tekst jawny mogą zostać przedstawione w postaci zwykłego tekstu lub w postaci szesnastkowej.
+
+\end{document}
