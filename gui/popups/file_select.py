@@ -53,11 +53,8 @@ def selectFile(starting_value=None, *args, **keywords):
     F.set_colors()
     F.wCommand.show_bold = True
     if starting_value:
-        if not os.path.exists(os.path.abspath(os.path.expanduser(starting_value))):
-            F.value = os.getcwd()
-        else:
-            F.value = starting_value
-            F.wCommand.value = starting_value
+        F.value = os.path.dirname(starting_value)
+        F.wCommand.value = starting_value
     else:
         F.value = os.getcwd()
     F.update_grid()

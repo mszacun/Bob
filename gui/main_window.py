@@ -1,4 +1,5 @@
 from functools import partial
+import os
 
 import npyscreen
 
@@ -118,7 +119,8 @@ class MainWindow(npyscreen.FormMuttActiveWithMenus):
             self._receive_file(filename, number_of_bytes)
 
     def _receive_file(self, filename, number_of_bytes):
-        save_destination = npyscreen.selectFile('/tmp/', must_exist=False, confirm_if_exists=True)
+        suggested_path = os.path.join('/tmp/', filename)
+        save_destination = selectFile(suggested_path, must_exist=False, confirm_if_exists=True)
         self.progress_popup = FileTransferProgressPopup(filename, number_of_bytes, self.protocol)
         self.protocol.receive_file(save_destination, number_of_bytes, self.current_encryption)
         self.progress_popup.edit()
