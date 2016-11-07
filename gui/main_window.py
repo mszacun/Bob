@@ -11,6 +11,7 @@ from gui.highlightning import MessageHighlightMultiLine
 from gui.controler import SendMessageActionController
 from gui.history import Message, FileTransfer
 from utils import humanize_bytes
+from gui.popups.file_select import selectFile
 
 from gui.popups.caesar_encryption_configuration import CaesarEncryptionConfigurationPopup
 from gui.popups.vigenere_encryption_configuration import VigenereEncryptionConfigurationPopup
@@ -90,7 +91,7 @@ class MainWindow(npyscreen.FormMuttActiveWithMenus):
         self.parentApp.switchFormNow()
 
     def send_file(self):
-        file_to_send = npyscreen.selectFile('~/', must_exist=True, confirm_if_exists=False)
+        file_to_send = selectFile('~/', must_exist=True, confirm_if_exists=False)
         self.protocol.offer_file_transmission(file_to_send, self.current_encryption)
 
     def configure_encryption(self, configuration_popup_cls):
