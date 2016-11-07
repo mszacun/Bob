@@ -1,3 +1,6 @@
+from itertools import cycle
+
+
 class NotThisEncryptionSerialized(Exception):
     pass
 
@@ -31,46 +34,20 @@ class NoneEncryption(object):
         return self.ENCRYPTION_NAME
 
 
-class CaesarCipher(object):
-    ENCRYPTION_NAME = 'Caesar cipher'
+class ShiftBasedCipher(object):
     LOWER_LETTERS = 'abcdefghijklmnopqrstuvwxyz'
     UPPER_LETTERS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
     DIGITS = '0123456789'
 
-    def __init__(self, key):
-        self.key = key
-
-    def encrypt(self, plaintext):
-        return ''.join(self._encrypt_character(c) for c in plaintext)
-
-    def encrypt_binary(self, plaintext):
-        return ''.join(self._shift_binary_character(c, self.key) for c in plaintext)
-
-    def decrypt(self, ciphertext):
-        return ''.join(self._decrypt_character(c) for c in ciphertext)
-
-    def decrypt_binary(self, ciphertext):
-        return ''.join(self._shift_binary_character(c, -self.key) for c in ciphertext)
-
-    def serialize(self):
-        return {'name': self.ENCRYPTION_NAME, 'key': self.key}
-
-    @classmethod
-    def deserialize(cls, encryption_params):
-        if encryption_params['name'] != cls.ENCRYPTION_NAME:
-            raise NotThisEncryptionSerialized()
-
-        return CaesarCipher(key=encryption_params['key'])
-
-    def _encrypt_character(self, character):
+    def _shift_character(self, character, shift):
         if character in self.LOWER_LETTERS:
-            return self._shift_using_alphabet(character, self.LOWER_LETTERS, self.key)
+            return self._shift_using_alphabet(character, self.LOWER_LETTERS, shift)
 
         if character in self.UPPER_LETTERS:
-            return self._shift_using_alphabet(character, self.UPPER_LETTERS, self.key)
+            return self._shift_using_alphabet(character, self.UPPER_LETTERS, shift)
 
         if character in self.DIGITS:
-            return self._shift_using_alphabet(character, self.DIGITS, self.key)
+            return self._shift_using_alphabet(character, self.DIGITS, shift)
 
         return character
 
@@ -88,18 +65,58 @@ class CaesarCipher(object):
 
         return chr(redundant_shifted % 256)
 
-    def _decrypt_character(self, character):
-        if character in self.LOWER_LETTERS:
-            return self._shift_using_alphabet(character, self.LOWER_LETTERS, -self.key)
 
-        if character in self.UPPER_LETTERS:
-            return self._shift_using_alphabet(character, self.UPPER_LETTERS, -self.key)
+class SingleKeyCipher(object):
+    def __init__(self, key):
+        self.key = key
 
-        if character in self.DIGITS:
-            return self._shift_using_alphabet(character, self.DIGITS, -self.key)
+    def serialize(self):
+        return {'name': self.ENCRYPTION_NAME, 'key': self.key}
 
-        return character
+    @classmethod
+    def deserialize(cls, encryption_params):
+        if encryption_params['name'] != cls.ENCRYPTION_NAME:
+            raise NotThisEncryptionSerialized()
+
+        return cls(key=encryption_params['key'])
 
     def __str__(self):
         return '{} (key: {})'.format(self.ENCRYPTION_NAME, self.key)
+
+
+class CaesarCipher(ShiftBasedCipher, SingleKeyCipher):
+    ENCRYPTION_NAME = 'Caesar cipher'
+
+    def encrypt(self, plaintext):
+        return ''.join(self._shift_character(c, self.key) for c in plaintext)
+
+    def encrypt_binary(self, plaintext):
+        return ''.join(self._shift_binary_character(c, self.key) for c in plaintext)
+
+    def decrypt(self, ciphertext):
+        return ''.join(self._shift_character(c, -self.key) for c in ciphertext)
+
+    def decrypt_binary(self, ciphertext):
+        return ''.join(self._shift_binary_character(c, -self.key) for c in ciphertext)
+
+
+class VigenereCipher(ShiftBasedCipher, SingleKeyCipher):
+    def encrypt(self, plaintext):
+        return ''.join(self._shift_character(c, self._calculate_shift(key_letter))
+                       for c, key_letter in zip(plaintext, cycle(self.key)))
+
+    def encrypt_binary(self, plaintext):
+        return ''.join(self._shift_binary_character(c, self._calculate_shift(key_letter))
+                       for c, key_letter in zip(plaintext, cycle(self.key)))
+
+    def decrypt(self, ciphertext):
+        return ''.join(self._shift_character(c, -self._calculate_shift(key_letter))
+                       for c, key_letter in zip(ciphertext, cycle(self.key)))
+
+    def decrypt_binary(self, ciphertext):
+        return ''.join(self._shift_binary_character(c, -self._calculate_shift(key_letter))
+                       for c, key_letter in zip(ciphertext, cycle(self.key)))
+
+    def _calculate_shift(self, key_letter):
+        return self.UPPER_LETTERS.index(key_letter)
 
