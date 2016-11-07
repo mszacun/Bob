@@ -8,7 +8,8 @@ from gui.command_box import HistoryRemeberingTextCommandBox
 from gui.highlightning import MessageHighlightMultiLine
 from gui.controler import SendMessageActionController
 from gui.history import Message, FileTransfer
-from gui.popups import CaesarEncryptionConfigurationPopup, FileTransferProgressPopup
+from gui.popups.caesar_encryption_configuration import CaesarEncryptionConfigurationPopup
+from gui.popups.file_transfer_progress import FileTransferProgressPopup
 from utils import humanize_bytes
 
 

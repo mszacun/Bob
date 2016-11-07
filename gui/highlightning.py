@@ -2,7 +2,7 @@ import npyscreen
 import re
 import curses
 
-from gui.popups import MessageDetailsPopup
+from gui.popups.message_details import MessageDetailsPopup
 
 
 class MessageHighlightTextfield(npyscreen.Textfield):
