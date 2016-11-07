@@ -3,14 +3,16 @@ import npyscreen
 from messages import TextMessage, DisconnectMessage, ConnectionEstablishedMessage, ChangeEncryptionMessage, \
      OfferFileTransmissionMessage, FileChunkMessage, FileSendingCompleteMessage
 
-from cryptography import CaesarCipher, NoneEncryption
+from cryptography import CaesarCipher, NoneEncryption, VigenereCipher
 from gui.command_box import HistoryRemeberingTextCommandBox
 from gui.highlightning import MessageHighlightMultiLine
 from gui.controler import SendMessageActionController
 from gui.history import Message, FileTransfer
-from gui.popups.caesar_encryption_configuration import CaesarEncryptionConfigurationPopup
-from gui.popups.file_transfer_progress import FileTransferProgressPopup
 from utils import humanize_bytes
+
+from gui.popups.caesar_encryption_configuration import CaesarEncryptionConfigurationPopup
+from gui.popups.vigenere_encryption_configuration import VigenereEncryptionConfigurationPopup
+from gui.popups.file_transfer_progress import FileTransferProgressPopup
 
 
 class MainWindow(npyscreen.FormMuttActiveWithMenus):
@@ -35,6 +37,7 @@ class MainWindow(npyscreen.FormMuttActiveWithMenus):
         encryption = menu.addNewSubmenu('Encryption')
         encryption.addItem('None', self.configure_none_encryption)
         encryption.addItem('Caesar Cipher', self.configure_caesar_encryption)
+        encryption.addItem('Vigenere Cipher', self.configure_vigenere_encryption)
         menu.addItem('Exit', self.exit_application)
         self.editw = 3
 
@@ -94,6 +97,13 @@ class MainWindow(npyscreen.FormMuttActiveWithMenus):
         if configure_popup.value:
             key = configure_popup.get_key()
             self._set_encryption(CaesarCipher(key=key), set_by_remote=False)
+
+    def configure_vigenere_encryption(self):
+        configure_popup = VigenereEncryptionConfigurationPopup()
+        configure_popup.edit()
+        if configure_popup.value:
+            key = configure_popup.get_key()
+            #self._set_encryption(VigenereCipher(key=key), set_by_remote=False)
 
     def configure_none_encryption(self):
         self._set_encryption(NoneEncryption(), set_by_remote=False)
