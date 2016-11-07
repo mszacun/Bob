@@ -1,6 +1,8 @@
 from npyscreen.utilNotify import ConfirmCancelPopup
 import npyscreen
 
+from cryptography import CaesarCipher
+
 
 class IntegerSlider(npyscreen.Slider):
     def get_value(self):
@@ -24,5 +26,5 @@ class CaesarEncryptionConfigurationPopup(ConfirmCancelPopup):
         self.shift_slider = self.add(TitleIntegerSlider, name='Key (shift)', lowest=1, out_of=26, value=3)
         self.preserve_selected_widget = True
 
-    def get_key(self):
-        return self.shift_slider.value
+    def build_encryption(self):
+        return CaesarCipher(key=self.shift_slider.value)

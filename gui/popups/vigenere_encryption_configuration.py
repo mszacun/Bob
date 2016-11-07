@@ -1,6 +1,7 @@
 from npyscreen.utilNotify import ConfirmCancelPopup
 import npyscreen
 
+from cryptography import VigenereCipher
 
 class UppercaseTextfield(npyscreen.Textfield):
     def h_addch(self, inp):
@@ -22,5 +23,5 @@ class VigenereEncryptionConfigurationPopup(ConfirmCancelPopup):
         self.key_textbox = self.add(TitleUppercaseTextfield, name='Key')
         self.preserve_selected_widget = True
 
-    def get_key(self):
-        return self.key_textbox.value
+    def build_encryption(self):
+        return VigenereCipher(key=self.key_textbox.value)

@@ -101,6 +101,8 @@ class CaesarCipher(ShiftBasedCipher, SingleKeyCipher):
 
 
 class VigenereCipher(ShiftBasedCipher, SingleKeyCipher):
+    ENCRYPTION_NAME = 'Vigenere cipher'
+
     def encrypt(self, plaintext):
         return ''.join(self._shift_character(c, self._calculate_shift(key_letter))
                        for c, key_letter in zip(plaintext, cycle(self.key)))

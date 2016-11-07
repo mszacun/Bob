@@ -7,7 +7,7 @@ from time import sleep
 from networking.file_transfer import IncomingFileTransfer, OutcomingFileTransfer
 from messages import TextMessage, DisconnectMessage, ConnectionEstablishedMessage, ChangeEncryptionMessage, \
      OfferFileTransmissionMessage, FileChunkMessage, FileSendingCompleteMessage
-from cryptography import CaesarCipher, NoneEncryption, NotThisEncryptionSerialized
+from cryptography import CaesarCipher, NoneEncryption, NotThisEncryptionSerialized, VigenereCipher
 
 
 TEXT_MESSAGE_TYPE = 'TEXT_MESSAGE'
@@ -18,7 +18,7 @@ FILE_CHUNK_MESSAGE_TYPE = 'FILE_CHUNK'
 
 
 class NetworkProtocol(Thread):
-    KNOWN_ENCRYPTIONS = [CaesarCipher, NoneEncryption]
+    KNOWN_ENCRYPTIONS = [CaesarCipher, NoneEncryption, VigenereCipher]
     FILE_CHUNK_SIZE = 65668
     RECV_BUFFER_SIZE = 131336
     BETWEEN_FILE_CHUNKS_TIME = 0.065
