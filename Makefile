@@ -3,3 +3,15 @@ all:
 
 clean_pyc:
 	find -name '*.pyc' -delete
+
+manual: instrukcja.tex
+	texi2pdf instrukcja.tex
+
+clean: clean_pyc
+	rm instrukcja.aux instrukcja.log instrukcja.toc
+
+zip: manual clean
+	cp . /tmp/bob -r
+	rm /tmp/bob/img -rf
+	zip -r bob.zip /tmp/bob
+	
