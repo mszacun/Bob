@@ -6,7 +6,7 @@ import npyscreen
 from messages import TextMessage, DisconnectMessage, ConnectionEstablishedMessage, ChangeEncryptionMessage, \
      OfferFileTransmissionMessage, FileChunkMessage, FileSendingCompleteMessage
 
-from cryptography import CaesarCipher, NoneEncryption, VigenereCipher
+from cryptography import CaesarCipher, NoneEncryption, VigenereCipher, Rot13Cipher
 from gui.command_box import HistoryRemeberingTextCommandBox
 from gui.highlightning import MessageHighlightMultiLine
 from gui.controler import SendMessageActionController
@@ -39,8 +39,9 @@ class MainWindow(npyscreen.FormMuttActiveWithMenus):
         menu = self.new_menu(name='Menu')
         menu.addItem('Send file', self.send_file)
         encryption = menu.addNewSubmenu('Encryption')
-        encryption.addItem('None', self.configure_none_encryption)
+        encryption.addItem('None', partial(self._set_encryption, NoneEncryption()))
         encryption.addItem('Caesar Cipher', partial(self.configure_encryption, CaesarEncryptionConfigurationPopup))
+        encryption.addItem('Rot13 Cipher', partial(self._set_encryption, Rot13Cipher()))
         encryption.addItem('Vigenere Cipher', partial(self.configure_encryption, VigenereEncryptionConfigurationPopup))
         menu.addItem('Exit', self.exit_application)
         self.editw = 3
