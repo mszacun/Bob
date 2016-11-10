@@ -8,7 +8,7 @@ manual: instrukcja.tex
 	texi2pdf instrukcja.tex
 
 clean: clean_pyc
-	rm instrukcja.aux instrukcja.log instrukcja.toc
+	rm instrukcja.aux instrukcja.log instrukcja.toc __pycache__ -rf
 
 zip: manual clean
 	cp . /tmp/bob -r
