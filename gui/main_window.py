@@ -6,7 +6,7 @@ import npyscreen
 from messages import TextMessage, DisconnectMessage, ConnectionEstablishedMessage, ChangeEncryptionMessage, \
      OfferFileTransmissionMessage, FileChunkMessage, FileSendingCompleteMessage
 
-from cryptography import CaesarCipher, NoneEncryption, VigenereCipher, Rot13Cipher
+from cryptography.ciphers import NoneEncryption, Rot13Cipher
 from gui.command_box import HistoryRemeberingTextCommandBox
 from gui.highlightning import MessageHighlightMultiLine
 from gui.controler import SendMessageActionController

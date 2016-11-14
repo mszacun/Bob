@@ -1,6 +1,6 @@
 import unittest
 
-from cryptography import CaesarCipher, VigenereCipher
+from cryptography.ciphers import CaesarCipher, VigenereCipher
 
 
 class CipherTests(unittest.TestCase):
