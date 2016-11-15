@@ -8,6 +8,8 @@
 \usepackage{listings}
 \usepackage{graphicx}
 \usepackage{float}
+\usepackage{svg}
+\usepackage{amsmath}
 
 \graphicspath{ {./img/} }
 
@@ -28,25 +30,25 @@
 \newpage
 
 \section{O aplikacji}
-  Aplikacja ,,Bob'' jest konsolową aplikacją służcą do bezpośredniej i~natychmiastowej wymiany wiadomości pomiędzy 
+  Aplikacja ,,Bob'' jest konsolową aplikacją służcą do bezpośredniej i~natychmiastowej wymiany wiadomości pomiędzy
   dwoma użytkownikami (zwanymi dalej ,,klient'' oraz ,,serwer'')
   Program został stworzony w języku programowania \emph{Python2}. Do stworzenia konsolowego interfejsu użytkownika
   została wykorzystana biblioteka \emph{ncurses} wraz z~biblioteką widgetów \emph{npyscreen}.
   Aplikacja pozwala na wymianę zarówno wiadomości tekstowych jak i~transmisję plików. Wykorzystywane aktualnie
-  szyfrowanie (lub jego brak) może zostać w dowolnej chwili zmienione przez użytkownika. 
+  szyfrowanie (lub jego brak) może zostać w dowolnej chwili zmienione przez użytkownika.
 
 \section{Instrukcja obsługi aplikacji}
   \subsection{Uruchamianie aplikacji}
-    Jak zostało wcześniej powiedziane aplikacja ,,Bob'' wykonana jest w~architekturze klient-serwer. W~związku 
-    z~tym niezbędne jest uruchomienie dwóch instancji aplikacji: jednego serwera oraz klienta. Program należy 
-    uruchomić z~konsoli, w~tym celu należy przejść do katalogu z aplikacją. Serwer uruchaminy jest przy pomocy 
+    Jak zostało wcześniej powiedziane aplikacja ,,Bob'' wykonana jest w~architekturze klient-serwer. W~związku
+    z~tym niezbędne jest uruchomienie dwóch instancji aplikacji: jednego serwera oraz klienta. Program należy
+    uruchomić z~konsoli, w~tym celu należy przejść do katalogu z aplikacją. Serwer uruchaminy jest przy pomocy
     komendy:
       \lstset{language=sh,literate={--}{{-\,-}}1}
       \begin{lstlisting}
         ./bob.py --listen
       \end{lstlisting}
     Polecenie to uruchamia serwer, który oczekuje na połączenie pochodzące od klienta. Domyślnym portem na którym
-    działa aplikacja oraz nasłuchuje serwer jest port \emph{1306}. Port ten można zmienić przy pomocy opcji 
+    działa aplikacja oraz nasłuchuje serwer jest port \emph{1306}. Port ten można zmienić przy pomocy opcji
     -{}-port:
       \lstset{language=sh,literate={--}{{-\,-}}1}
       \begin{lstlisting}
@@ -58,7 +60,7 @@
       \begin{lstlisting}
         ./bob.py
       \end{lstlisting}
-    Polecenie to powoduje próbę połączenia klienta z serwerem. Podobnie jak w~przypadku serwera domyślnie 
+    Polecenie to powoduje próbę połączenia klienta z serwerem. Podobnie jak w~przypadku serwera domyślnie
     wykorzystywanym portem jest \emph{1306}. Domyślnym hostem, z którym próbuje połączyć się klient jest
     \emph{localhost}. Zarówno domyślny port oraz host może zostać zmieniony przez użytkownika:
       \lstset{language=sh,literate={--}{{-\,-}}1}
@@ -90,12 +92,12 @@
     \subsubsection{Historia rozmowy}
       W oknie tym wyświetlone są wszystkie wiadomości odebrane oraz wysłane. Każda wiadomość opisana jest godziną
       wysłania (odebrania) oraz nadawcą. Możliwe jest aktywowanie okna historii poprzez naciśnięcie klawisza
-      \emph{Tab}. Po aktywowaniu, możliwe jest wybieranie wiadomości. Po naciśnięciu klawisza \emph{Enter} na 
+      \emph{Tab}. Po aktywowaniu, możliwe jest wybieranie wiadomości. Po naciśnięciu klawisza \emph{Enter} na
       wybranej wiadomości wyświetlone zostanie okienko ze szczegółami wiadomości. Możliwe jest tutaj sprawdzenie
       szyfrowania, które zostało użyte do wysłania wiadomości oraz podejrzenie powstałego szyfrogramu oraz tekstu
       jawnego.
 
-      Oprócz wysłanych oraz odebranych wiadomości w oknie historii rozmowy wyświetlane są również informacje na 
+      Oprócz wysłanych oraz odebranych wiadomości w oknie historii rozmowy wyświetlane są również informacje na
       temat odebranych oraz wysłanych plików. Podobnie jak w przypadku wiadomości możliwe jest wybranie dowolnego
       z tych wpisów oraz po naciśnięciu klawisza \emph{Enter} podejrzenie szczegółów transmisji plików.
 
@@ -122,7 +124,7 @@
     \paragraph{Wysyłanie pliku}
       Po wybraniu opcji \emph{Send file} możliwe jest wysłanie pliku do rozmówcy. W wyświetlonym oknie należy za
       pomocą strzałek wybrać odpowiedni plik, po czym zatwierdzić wybór klawiszem \emph{Enter}. W tym momencie
-      rozmówca zostaje poproszony o akceptację transferu pliku, oraz wskazanie lokalizacji zapisu pliku, przy 
+      rozmówca zostaje poproszony o akceptację transferu pliku, oraz wskazanie lokalizacji zapisu pliku, przy
       pomocy analogicznego okna dialogowego. Po akceptacji rozpoczna się transmisja pliku, której postęp
       przedstawiony jest w~wyświetlonym okienku.
 
@@ -149,10 +151,102 @@
     \end{figure}
 
     \paragraph{Wyjście z aplikacji}
-      Po wybraniu opcji \emph{Exit} aplikacja zostaje zamknięta. Do rozmówcy zostaje wysłana informacja o 
+      Po wybraniu opcji \emph{Exit} aplikacja zostaje zamknięta. Do rozmówcy zostaje wysłana informacja o
       zerwaniu połączenia, w~związku z czym jego aplikacja również zostaje zamknięta
 
-  \section{Szczegóły implementacji algorytmów szyfrowania}
-      
+  \section{Szczegóły implementacji}
+    \subsection{Algorytmy szyfrowania}
+    Klasy w których zaimplementowana została logika związana z szyfrowaniem znajdują się w folderze \emph{cryptography}.
+    \begin{itemize}
+            \item \emph{base.py} - znajdują się tutaj klasy bazowe, które dostarczają implementację metod pomocniczych
+            \item \emph{ciphers.py} - zaimplementowane są tutaj konkretne szyfry, które mogą być wykorzystywane podczas
+                transmisji plików oraz wiadomości
+    \end{itemize}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[scale=0.6]{cryptography_uml}
+        \caption{Diagram klas związanych z szyfrowaniem}
+        \label{CRYPTOGRAPHY_UML}
+    \end{figure}
+
+    \subsubsection{Klasy bazowe}
+
+      \begin{itemize}
+          \item {\bfseries CipherWithoutKey} - Klasa bazowa dla szyfrów, które nie posiadają klucza, bądź klucz jest
+              z góry ustawiony zaimplementowana jest tutaj serializacja oraz deserializacja parametrów tych szyfrów do
+              celów ustalenia sposobu szyfrowania pomiędzy serwerem a klientem, jedynym przesyłanym parametrem jest
+              nazwa algorytmu szyfrowania.
+          \item {\bfseries SingleKeyCipher} - Klasa bazowa dla szyfrów posiadających jeden klucz, serializacja i
+              deserializacja takich szyfrów obejmuje zarówno nazwę algorytmu jak i używany klucz.
+          \item {\bfseries ShiftBasedCipher} - Klasa bazowa dla szyfrów opartych o zastępowanie poszczególnych liter
+              tekstu jawnego inną literą oddaloną o określoną liczbę pozycji w alfabecie. Zaimplementowane są dwie
+              metody pomocnicze:
+              \begin{itemize}
+                  \item \emph{\_shift\_character} - przesuwa znak o określoną liczbę pozycji uwzględniając z jakiego
+                      zbioru on pochodzi tzn. małe litery przesuwane są jedynie wśród małych liter, wielkie litery wśród
+                      wielkich liter, natomiast cyfry wśród cyfr. Oznacza to, że litera 'z' przesunięta o jedną pozycję
+                      staje się literą 'a', a litera 'Z' staje się literą 'A'. Znaki, które nie są literą ani cyfrą nie
+                      są szyfrowane.
+                   \item \emph{\_shift\_binary\_charater} - przesuwając każdy znak traktuje go jako znak binarny
+                       pochodzący z 256-znakowego alfabetu.
+              \end{itemize}
+      \end{itemize}
+
+    \subsubsection{Zaimplementowane szyfry}
+      Każda klasa implementująca szyfr posiada odpowiednie metody
+      \begin{itemize}
+          \item \emph{encrypt} - metoda szyfrująca tekst jawny składający się ze znaków alfanumeryczych
+          \item \emph{decrypt} - metoda deszyfrująca szyfrogram zaszyfrowany wcześniej metodą \emph{encypt}
+          \item \emph{encrypt\_binary} - metoda szyfrująca tekst jawny składający się z bajtów
+          \item \emph{decrypt\_binary} - metoda deszyfrująca szyfrogram zaszyfrowany wcześniej metodą \emph{encypt\_binary}
+      \end{itemize}
+
+      Zaimplementowane algorytmy szyfrowania to:
+      \begin{itemize}
+          \item {\bfseries NoneEncryption} - Klasa implementująca wzorzec projektowy \emph{Null Object Patern}, używana
+              gdy szyfrowanie nie jest aktywne, wszystkie jej opisane powyżej metody zwracają tekst jawny oraz szyfrogram
+              w dokładnie takiej samej formie jak podana na wejściu.
+          \item {\bfseries CaesarCipher} - Klasa implementująca szyfr Cezara, parametryzowana kluczem.
+          \item {\bfseries Rot13Cipher} - Klasa implementująca szyfr Rot13, dziedziczy z klasy CaesarCipher, wprowadza
+              na stałe ustalony klucz.
+          \item {\bfseries ViegenreCipher} - Klasa implementująca szyfr Viegenere, dostarczony klucz musi składać się
+              wyłącznie z wielkich liter. Przesunięcie kolejnego znaku tekstu jawnego odpowiada pozycji w alfabecie kolejnego
+              znaku klucza, w razie potrzeby klucz jest zapętlany.
+      \end{itemize}
+
+  \subsection{Interfejs użytkownika}
+  Klasy związane z interfejsem użytkownika znajdują się w folderze \emph{gui}. Wśród ważniejszych klas można wyróżnić:
+  \begin{itemize}
+      \item {\bfseries MainWindow} (main\_window.py) - Klasa implementująca główne okno aplikacji, zawarte są w niej
+          wszystkie widgety widoczne w głównym oknie, zajmuje się ona tworzeniem oraz obsługą menu programu. Klasa ta
+          otrzymuje od protokołu sieciowego informacje o wszelkich zdarzeniach i odpowiednio je obsługuje, na przykład
+          wyświetla wiadomości w oknie z historią, pyta użytkownika o zgodę na odebranie pliku oraz wyświetla informacje
+          o~zmianie sposobu szyfrowania zaproponowanej przez rozmówcę.
+      \item {\bfseries HistoryRemeberingTextCommandBox} (command\_box.py) - Klasa implementująca okienko do wpisywania
+          wiadomości przeznaczonej do wysłania. Zawiera logikę wyświetlającą tekst zachęty (,,[Your message]'') oraz
+          pozwala na używanie strzałek góra/dół do ponownego wysłania tej samej wiadmości.
+      \item {\bfseries MessageHighlightMultiLine} (highlighting.py) - Klasa implementująca historię rozmowy,
+          zaimplementowane zostało tutaj odpowiednie formatowanie wiadomości oraz kolorowanie poszczególnych jej części
+          na przykład czasu otrzymania oraz autora. Ponadto obsługiwany jest klawisz \emph{Enter} pozwalający wyświetlić
+          szczegóły wybranej wiadomości.
+      \item Okienka dialogowe znajdujące się w katologu \emph{gui/popups}:
+      \begin{itemize}
+          \item {\bfseries CaesarEncryptionConfigurationPopup} (caesar\_encryption\_configuration.py) - Okienko służące
+              do konfiguracji szyfru Cezara. Wykorzystuje klasę \emph{IntegerSlider}, która jest kontrolką typu slider,
+              zwracającą wartości całkowite.
+          \item {\bfseries NotHiddenFileSelector} (file\_select.py) - Okienko służące do wyboru pliku do wysłania, bądź
+              lokalizacji zapisu pliku odbieranego. Zaimplementowano ukrywanie plików uznawanych za ukryte w systemach
+              UNIX (zaczynających się od kropki).
+          \item {\bfseries FileTransferProgressPopup} (file\_transfer\_progress.py) - Okienko służące do wyświetlania postępu
+              transferu pliku. Wykorzystana klasa \emph{ProcessBarBox} to nieedytowalny slider, wykorzystany w
+              charakterze paska postępu.
+          \item {\bfseries MessageDetailsPopup} (message\_details.py) - Okienka wyświetlające szczegóły wybranej przez
+              użytkownika wiadomości, korzysta z~klasy \emph{SynchronizedPager} która pozwala użytkownikowi jednocześnie
+              przewijać okienko z tekstem jawnym i szyfrogramem, dzięki czemu okienka te pozostają zsynchronizowane i
+              zawsze pokazują odpowiadające sobie fragmenty.
+      \end{itemize}
+  \end{itemize}
+
 
 \end{document}
