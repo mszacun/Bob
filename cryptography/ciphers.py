@@ -1,9 +1,9 @@
 from itertools import cycle
 
-from cryptography.base import NoKeyCipher, ShiftBasedCipher, SingleKeyCipher
+from cryptography.base import CipherWithoutKey, ShiftBasedCipher, SingleKeyCipher
 
 
-class NoneEncryption(NoKeyCipher):
+class NoneEncryption(CipherWithoutKey):
     ENCRYPTION_NAME = 'None'
 
     def encrypt(self, plaintext):
@@ -35,7 +35,7 @@ class CaesarCipher(ShiftBasedCipher, SingleKeyCipher):
         return ''.join(self._shift_binary_character(c, -self.key) for c in ciphertext)
 
 
-class Rot13Cipher(CaesarCipher, NoKeyCipher):
+class Rot13Cipher(CaesarCipher, CipherWithoutKey):
     KEY = 13
     ENCRYPTION_NAME = 'Rot13 Cipher'
 

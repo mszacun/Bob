@@ -3,7 +3,7 @@ class NotThisEncryptionSerialized(Exception):
     pass
 
 
-class NoKeyCipher(object):
+class CipherWithoutKey(object):
     def serialize(self):
         return {'name': self.ENCRYPTION_NAME}
 
