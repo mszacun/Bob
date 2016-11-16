@@ -35,22 +35,12 @@ class CaesarCipher(ShiftBasedCipher, SingleKeyCipher):
         return ''.join(self._shift_binary_character(c, -self.key) for c in ciphertext)
 
 
-class Rot13Cipher(CaesarCipher, CipherWithoutKey):
+class Rot13Cipher(CipherWithoutKey, CaesarCipher):
     KEY = 13
     ENCRYPTION_NAME = 'Rot13 Cipher'
 
     def __init__(self):
-        super(Rot13Cipher, self).__init__(Rot13Cipher.KEY)
-
-    def serialize(self):
-        return {'name': self.ENCRYPTION_NAME}
-
-    @classmethod
-    def deserialize(cls, encryption_params):
-        if encryption_params['name'] != cls.ENCRYPTION_NAME:
-            raise NotThisEncryptionSerialized()
-
-        return cls()
+        CaesarCipher.__init__(self, Rot13Cipher.KEY)
 
 
 class VigenereCipher(ShiftBasedCipher, SingleKeyCipher):
