@@ -13,5 +13,6 @@ clean: clean_pyc
 zip: manual clean
 	cp . /tmp/bob -r
 	rm /tmp/bob/img -rf
+	rm /tmp/bob/tags
 	zip -r bob.zip /tmp/bob
 	
