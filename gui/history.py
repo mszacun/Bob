@@ -38,23 +38,16 @@ class Message(HistoryItem):
 
 
 class FileTransfer(HistoryItem):
-    def __init__(self, encryption, filepath, sender=None, time=None):
+    def __init__(self, encryption, filepath, plaintext, ciphertext, sender=None, time=None):
         self.filename = os.path.basename(filepath)
 
-        file_content = self._read_file(filepath)
-
-        plaintext = hexdump(file_content, result='return')
-        ciphertext = encryption.encrypt_binary(file_content, True)
+        plaintext = hexdump(plaintext, result='return')
         self._dumped_ciphertext = hexdump(ciphertext, result='return')
 
         super(FileTransfer, self).__init__(encryption, plaintext, ciphertext, sender, time)
 
     def get_ciphertext_for_user_presentation(self):
         return self._dumped_ciphertext
-
-    def _read_file(self, filepath):
-        with open(filepath, 'rb') as open_file:
-            return open_file.read()
 
     def __str__(self):
         direction = 'sent' if self.sender == self.YOU_SENDER else 'received'

@@ -9,8 +9,8 @@ class Client(NetworkProtocol):
     participant_name = 'Server'
     myself_name = 'Client'
 
-    def __init__(self, hostname, remote_port):
-        super(Client, self).__init__()
+    def __init__(self, hostname, remote_port, encryption):
+        super(Client, self).__init__(encryption)
         self.remote_port = remote_port
         self.hostname = hostname
 

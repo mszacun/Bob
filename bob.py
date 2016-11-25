@@ -10,6 +10,7 @@ import logging
 from networking.client import Client
 from networking.server import Server
 from gui.application import BobApplication
+from encryption.ciphers import NoneEncryption
 
 
 if __name__ == "__main__":
@@ -27,7 +28,8 @@ if __name__ == "__main__":
     fh.setLevel(logging.DEBUG)
     logger.addHandler(fh)
 
-    protocol = Server(port) if args.listen else Client(args.hostname, port)
+    encryption = NoneEncryption()
+    protocol = Server(port, encryption) if args.listen else Client(args.hostname, port, encryption)
     protocol.start()
-    app = BobApplication(protocol)
+    app = BobApplication(protocol, encryption)
     app.run()

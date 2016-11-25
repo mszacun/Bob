@@ -56,7 +56,8 @@ class MainWindow(npyscreen.FormMuttActiveWithMenus):
 
     def dispatch(self, message):
         if isinstance(message, TextMessage):
-            message = Message(self.current_encryption, ciphertext=message.content, sender=self.protocol.participant_name)
+            message = Message(self.current_encryption, ciphertext=message.content,
+                              sender=self.protocol.participant_name)
             self.wMain.add_message(message)
         if isinstance(message, DisconnectMessage):
             self.exit_application()
@@ -68,7 +69,9 @@ class MainWindow(npyscreen.FormMuttActiveWithMenus):
         if isinstance(message, OfferFileTransmissionMessage):
             self._ask_to_accept_file_transmission(message.filename, message.number_of_bytes)
         if isinstance(message, FileSendingCompleteMessage):
-            self._add_file_transfer(message.filepath)
+            file_transfer = FileTransfer(self.current_encryption, message.filepath, message.plaintext,
+                                         message.ciphertext)
+            self.wMain.add_message(file_transfer)
 
     def refresh_statusbar(self, status_message=None, encryption_message=None):
         status_message = status_message or self.status_message
@@ -124,12 +127,7 @@ class MainWindow(npyscreen.FormMuttActiveWithMenus):
     def _receive_file(self, filename, number_of_bytes):
         suggested_path = os.path.join('/tmp/', filename)
         save_destination = selectFile(suggested_path, must_exist=False, confirm_if_exists=True)
-        self.progress_popup = FileTransferProgressPopup(filename, number_of_bytes, self.protocol)
+        self.progress_popup = FileTransferProgressPopup(filename, save_destination, number_of_bytes, self.protocol)
         self.protocol.receive_file(save_destination, number_of_bytes, self.current_encryption)
         self.progress_popup.edit()
-        self._add_file_transfer(save_destination, self.protocol.participant_name)
-
-    def _add_file_transfer(self, filepath, sender=None):
-        file_transfer = FileTransfer(self.current_encryption, filepath, sender)
-        self.wMain.add_message(file_transfer)
-
+        self.wMain.add_message(self.progress_popup.file_transfer)

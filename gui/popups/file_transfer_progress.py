@@ -2,8 +2,9 @@ import npyscreen
 
 from etaprogress.progress import ProgressBarWget
 
-from messages import FileChunkMessage
+from messages import FileChunkMessage, FileReceivingCompleteMessage
 from gui.utils import humanize_bytes
+from gui.history import FileTransfer
 
 
 class ProcessBar(npyscreen.SliderPercent):
@@ -17,11 +18,12 @@ class ProcessBarBox(npyscreen.BoxTitle):
 
 
 class FileTransferProgressPopup(npyscreen.Popup):
-    def __init__(self, filename, expected_number_of_bytes, protocol):
+    def __init__(self, filename, save_destination, expected_number_of_bytes, protocol):
         self.expected_number_of_bytes = expected_number_of_bytes
         self.filename = filename
         self.eta_progressbar = ProgressBarWget(expected_number_of_bytes, max_width=20)
         self.protocol = protocol
+        self.save_destination = save_destination
 
         super(FileTransferProgressPopup, self).__init__(name='File transfer in progress')
 
@@ -59,3 +61,6 @@ class FileTransferProgressPopup(npyscreen.Popup):
     def dispatch(self, message):
         if isinstance(message, FileChunkMessage):
             self.set_progress(message.number_of_bytes_received_so_far)
+        if isinstance(message, FileReceivingCompleteMessage):
+            self.file_transfer = FileTransfer(self.protocol.encryption, self.save_destination, message.plaintext,
+                                              message.ciphertext, self.protocol.participant_name)

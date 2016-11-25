@@ -7,7 +7,7 @@ from time import sleep
 
 from networking.file_transfer import IncomingFileTransfer, OutcomingFileTransfer
 from messages import TextMessage, DisconnectMessage, ConnectionEstablishedMessage, ChangeEncryptionMessage, \
-     OfferFileTransmissionMessage, FileChunkMessage, FileSendingCompleteMessage
+     OfferFileTransmissionMessage, FileChunkMessage, FileSendingCompleteMessage, FileReceivingCompleteMessage
 from encryption.ciphers import CaesarCipher, NoneEncryption, VigenereCipher, Rot13Cipher, AESCipher
 from encryption.base import NotThisEncryptionSerialized
 
@@ -25,10 +25,11 @@ class NetworkProtocol(Thread):
     RECV_BUFFER_SIZE = 131336
     BETWEEN_FILE_CHUNKS_TIME = 0.08
 
-    def __init__(self):
+    def __init__(self, encryption):
         super(NetworkProtocol, self).__init__()
         self.queue = Queue()
         self.daemon = True
+        self.encryption = encryption
 
     def send_message(self, message):
         if self.encryption.returns_binary_data:
@@ -66,9 +67,6 @@ class NetworkProtocol(Thread):
                 self._dispatch(json.loads(data))
 
     def _dispatch(self, message_dict):
-        import logging
-        logger = logging.getLogger('bob')
-        logger.debug('message: {}'.format(json.dumps(message_dict)))
         if message_dict['type'] == TEXT_MESSAGE_TYPE:
             self._recive_message(message_dict)
         if message_dict['type'] == CHANGE_ENCRYPTION_MESSAGE_TYPE:
@@ -103,20 +101,22 @@ class NetworkProtocol(Thread):
             self._send({'type': FILE_CHUNK_MESSAGE_TYPE, 'content': chunk})
             sleep(self.BETWEEN_FILE_CHUNKS_TIME)
 
-        self.queue.put(FileSendingCompleteMessage(self.outcoming_file_transfer.filepath))
+        message = FileSendingCompleteMessage(self.outcoming_file_transfer.filepath,
+                                             self.outcoming_file_transfer.plaintext,
+                                             self.outcoming_file_transfer.ciphertext)
+        self.queue.put(message)
         self.outcoming_file_transfer.close()
         self.outcoming_file_transfer = None
 
 
     def _recive_file_chunk(self, message_dict):
         self.incoming_file_transfer.write(message_dict['content'])
-        self.queue.put(FileChunkMessage(self.incoming_file_transfer.received_bytes))
-        import logging
-        logger = logging.getLogger('bob')
-        logger.debug('received file chunk, received_bytes: {}'.format(self.incoming_file_transfer.received_bytes))
+        message = FileChunkMessage(self.incoming_file_transfer.received_bytes)
+        self.queue.put(message)
+
         if self.incoming_file_transfer.is_completed:
-            import logging
-            logger = logging.getLogger('bob')
-            logger.debug('closing file')
             self.incoming_file_transfer.close()
+            self.queue.put(FileReceivingCompleteMessage(self.incoming_file_transfer.filepath,
+                                                        self.incoming_file_transfer.plaintext,
+                                                        self.incoming_file_transfer.ciphertext))
             self.incoming_file_transfer = None

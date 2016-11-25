@@ -32,5 +32,14 @@ class FileChunkMessage(object):
 
 
 class FileSendingCompleteMessage(object):
-    def __init__(self, filepath):
+    def __init__(self, filepath, plaintext, ciphertext):
         self.filepath = filepath
+        self.plaintext = plaintext
+        self.ciphertext = ciphertext
+
+
+class FileReceivingCompleteMessage(object):
+    def __init__(self, filepath, plaintext, ciphertext):
+        self.filepath = filepath
+        self.plaintext = plaintext
+        self.ciphertext = ciphertext
