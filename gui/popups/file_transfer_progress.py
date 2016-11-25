@@ -35,6 +35,7 @@ class FileTransferProgressPopup(npyscreen.Popup):
         self.progressbar = self.add(ProcessBar, value=0, out_of=self.expected_number_of_bytes, rely=7)
 
     def set_progress(self, number_of_bytes_received_so_far):
+        number_of_bytes_received_so_far = min(number_of_bytes_received_so_far, self.expected_number_of_bytes) #FIXME
         self.progressbar.value = number_of_bytes_received_so_far
         self.progressbar.display()
 

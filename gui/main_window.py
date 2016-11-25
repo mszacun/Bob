@@ -16,6 +16,7 @@ from gui.popups.file_select import selectFile
 
 from gui.popups.caesar_encryption_configuration import CaesarEncryptionConfigurationPopup
 from gui.popups.vigenere_encryption_configuration import VigenereEncryptionConfigurationPopup
+from gui.popups.aes_encryption_configuration import AESEncryptionConfigurationPopup
 from gui.popups.file_transfer_progress import FileTransferProgressPopup
 
 
@@ -43,6 +44,7 @@ class MainWindow(npyscreen.FormMuttActiveWithMenus):
         encryption.addItem('Caesar Cipher', partial(self.configure_encryption, CaesarEncryptionConfigurationPopup))
         encryption.addItem('Rot13 Cipher', partial(self._set_encryption, Rot13Cipher()))
         encryption.addItem('Vigenere Cipher', partial(self.configure_encryption, VigenereEncryptionConfigurationPopup))
+        encryption.addItem('AES Cipher', partial(self.configure_encryption, AESEncryptionConfigurationPopup))
         menu.addItem('Exit', self.exit_application)
         self.editw = 3
 

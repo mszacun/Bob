@@ -1,3 +1,4 @@
 npyscreen
 etaprogress
 hexdump
+cryptography

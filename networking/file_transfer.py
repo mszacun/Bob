@@ -16,13 +16,13 @@ class IncomingFileTransfer(object):
 
     def write(self, base64_encrypted_data):
         encrypted_data = base64.b64decode(base64_encrypted_data)
-        data = self.encryption.decrypt_binary(encrypted_data)
+        self.received_bytes += len(encrypted_data)
+        data = self.encryption.decrypt_binary(encrypted_data, self.is_completed)
         self.file.write(data)
-        self.received_bytes += len(data)
 
     @property
     def is_completed(self):
-        return self.received_bytes == self.expected_size
+        return self.received_bytes >= self.expected_size
 
 
 class OutcomingFileTransfer(object):
@@ -32,11 +32,13 @@ class OutcomingFileTransfer(object):
 
     def open(self):
         self.file = open(self.filepath, 'rb')
+        self.is_completed = False
 
     def close(self):
         self.file.close()
 
     def get_chunk(self, chunk_size):
         data = self.file.read(chunk_size)
-        encrypted_data = self.encryption.encrypt_binary(data)
+        self.is_completed = len(data) < chunk_size
+        encrypted_data = self.encryption.encrypt_binary(data, self.is_completed)
         return base64.b64encode(encrypted_data)

@@ -1,3 +1,4 @@
+import base64
 from threading import Thread
 from Queue import Queue
 import json
@@ -7,7 +8,7 @@ from time import sleep
 from networking.file_transfer import IncomingFileTransfer, OutcomingFileTransfer
 from messages import TextMessage, DisconnectMessage, ConnectionEstablishedMessage, ChangeEncryptionMessage, \
      OfferFileTransmissionMessage, FileChunkMessage, FileSendingCompleteMessage
-from encryption.ciphers import CaesarCipher, NoneEncryption, VigenereCipher, Rot13Cipher
+from encryption.ciphers import CaesarCipher, NoneEncryption, VigenereCipher, Rot13Cipher, AESCipher
 from encryption.base import NotThisEncryptionSerialized
 
 
@@ -19,10 +20,10 @@ FILE_CHUNK_MESSAGE_TYPE = 'FILE_CHUNK'
 
 
 class NetworkProtocol(Thread):
-    KNOWN_ENCRYPTIONS = [CaesarCipher, NoneEncryption, VigenereCipher, Rot13Cipher]
+    KNOWN_ENCRYPTIONS = [CaesarCipher, NoneEncryption, VigenereCipher, Rot13Cipher, AESCipher]
     FILE_CHUNK_SIZE = 65668
     RECV_BUFFER_SIZE = 131336
-    BETWEEN_FILE_CHUNKS_TIME = 0.065
+    BETWEEN_FILE_CHUNKS_TIME = 0.08
 
     def __init__(self):
         super(NetworkProtocol, self).__init__()
@@ -30,6 +31,8 @@ class NetworkProtocol(Thread):
         self.daemon = True
 
     def send_message(self, message):
+        if self.encryption.returns_binary_data:
+            message = base64.b64encode(message)
         self._send({'type': TEXT_MESSAGE_TYPE, 'content': message})
 
     def _send(self, message_dict):
@@ -63,11 +66,14 @@ class NetworkProtocol(Thread):
                 self._dispatch(json.loads(data))
 
     def _dispatch(self, message_dict):
+        import logging
+        logger = logging.getLogger('bob')
+        logger.debug('message: {}'.format(json.dumps(message_dict)))
         if message_dict['type'] == TEXT_MESSAGE_TYPE:
-            self.queue.put(TextMessage(message_dict['content']))
+            self._recive_message(message_dict)
         if message_dict['type'] == CHANGE_ENCRYPTION_MESSAGE_TYPE:
-            encryption = self._dispatch_change_encryption(message_dict)
-            self.queue.put(ChangeEncryptionMessage(encryption))
+            self.encryption = self._dispatch_change_encryption(message_dict)
+            self.queue.put(ChangeEncryptionMessage(self.encryption))
         if message_dict['type'] == OFFER_FILE_TRANSMISSION_MESSAGE_TYPE:
             message = OfferFileTransmissionMessage(message_dict['filename'], message_dict['number_of_bytes'])
             self.queue.put(message)
@@ -75,6 +81,12 @@ class NetworkProtocol(Thread):
             self._send_file()
         if message_dict['type'] == FILE_CHUNK_MESSAGE_TYPE:
             self._recive_file_chunk(message_dict)
+
+    def _recive_message(self, message_dict):
+        content = message_dict['content']
+        if self.encryption.returns_binary_data:
+            content = base64.b64decode(content)
+        self.queue.put(TextMessage(content))
 
     def _dispatch_change_encryption(self, message_dict):
         for known_encryption in self.KNOWN_ENCRYPTIONS:
@@ -85,11 +97,10 @@ class NetworkProtocol(Thread):
 
     def _send_file(self):
         self.outcoming_file_transfer.open()
-        chunk = self.outcoming_file_transfer.get_chunk(self.FILE_CHUNK_SIZE)
 
-        while chunk:
-            self._send({'type': FILE_CHUNK_MESSAGE_TYPE, 'content': chunk})
+        while not self.outcoming_file_transfer.is_completed:
             chunk = self.outcoming_file_transfer.get_chunk(self.FILE_CHUNK_SIZE)
+            self._send({'type': FILE_CHUNK_MESSAGE_TYPE, 'content': chunk})
             sleep(self.BETWEEN_FILE_CHUNKS_TIME)
 
         self.queue.put(FileSendingCompleteMessage(self.outcoming_file_transfer.filepath))
@@ -100,6 +111,12 @@ class NetworkProtocol(Thread):
     def _recive_file_chunk(self, message_dict):
         self.incoming_file_transfer.write(message_dict['content'])
         self.queue.put(FileChunkMessage(self.incoming_file_transfer.received_bytes))
+        import logging
+        logger = logging.getLogger('bob')
+        logger.debug('received file chunk, received_bytes: {}'.format(self.incoming_file_transfer.received_bytes))
         if self.incoming_file_transfer.is_completed:
+            import logging
+            logger = logging.getLogger('bob')
+            logger.debug('closing file')
             self.incoming_file_transfer.close()
             self.incoming_file_transfer = None

@@ -23,9 +23,15 @@ class HistoryItem(object):
 class Message(HistoryItem):
     def __init__(self, encryption, plaintext=None, ciphertext=None, sender=None, time=None):
         if plaintext:
-            super(Message, self).__init__(encryption, plaintext, encryption.encrypt(plaintext), sender, time)
+            ciphertext = encryption.encrypt(plaintext)
         else:
-            super(Message, self).__init__(encryption, encryption.decrypt(ciphertext), ciphertext, sender, time)
+            plaintext = encryption.decrypt(ciphertext)
+
+        super(Message, self).__init__(encryption, plaintext, ciphertext, sender, time)
+
+    def get_ciphertext_for_user_presentation(self):
+        if self.encryption.returns_binary_data:
+            return hexdump(self.ciphertext, result='return')
 
     def __str__(self):
         return '{} - {}: {}'.format(self.formatted_time, self.sender, self.plaintext)
@@ -38,9 +44,13 @@ class FileTransfer(HistoryItem):
         file_content = self._read_file(filepath)
 
         plaintext = hexdump(file_content, result='return')
-        ciphertext = hexdump(encryption.encrypt_binary(file_content), result='return')
+        ciphertext = encryption.encrypt_binary(file_content, True)
+        self._dumped_ciphertext = hexdump(ciphertext, result='return')
 
         super(FileTransfer, self).__init__(encryption, plaintext, ciphertext, sender, time)
+
+    def get_ciphertext_for_user_presentation(self):
+        return self._dumped_ciphertext
 
     def _read_file(self, filepath):
         with open(filepath, 'rb') as open_file:

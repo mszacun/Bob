@@ -29,8 +29,8 @@ class CipherTests(unittest.TestCase):
         self.assertEqual(cipher.decrypt(expected_ciphertext), plaintext)
 
     def assertEncryptAndDecryptBinary(self, cipher, plaintext, expected_ciphertext):
-        self.assertEqual(cipher.encrypt_binary(plaintext), expected_ciphertext)
-        self.assertEqual(cipher.decrypt_binary(expected_ciphertext), plaintext)
+        self.assertEqual(cipher.encrypt_binary(plaintext, True), expected_ciphertext)
+        self.assertEqual(cipher.decrypt_binary(expected_ciphertext, True), plaintext)
 
 
 if __name__ == '__main__':
