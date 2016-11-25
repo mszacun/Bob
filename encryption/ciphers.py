@@ -1,6 +1,6 @@
 from itertools import cycle
 
-from cryptography.base import CipherWithoutKey, ShiftBasedCipher, SingleKeyCipher
+from encryption.base import CipherWithoutKey, ShiftBasedCipher, SingleKeyCipher
 
 
 class NoneEncryption(CipherWithoutKey):

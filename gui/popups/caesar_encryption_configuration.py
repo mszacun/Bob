@@ -1,7 +1,7 @@
 from npyscreen.utilNotify import ConfirmCancelPopup
 import npyscreen
 
-from cryptography.ciphers import CaesarCipher
+from encryption.ciphers import CaesarCipher
 
 
 class IntegerSlider(npyscreen.Slider):

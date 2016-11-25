@@ -7,8 +7,8 @@ from time import sleep
 from networking.file_transfer import IncomingFileTransfer, OutcomingFileTransfer
 from messages import TextMessage, DisconnectMessage, ConnectionEstablishedMessage, ChangeEncryptionMessage, \
      OfferFileTransmissionMessage, FileChunkMessage, FileSendingCompleteMessage
-from cryptography.ciphers import CaesarCipher, NoneEncryption, VigenereCipher, Rot13Cipher
-from cryptography.base import NotThisEncryptionSerialized
+from encryption.ciphers import CaesarCipher, NoneEncryption, VigenereCipher, Rot13Cipher
+from encryption.base import NotThisEncryptionSerialized
 
 
 TEXT_MESSAGE_TYPE = 'TEXT_MESSAGE'

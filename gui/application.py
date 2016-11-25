@@ -1,7 +1,7 @@
 import npyscreen
 
 from gui.main_window import MainWindow
-from cryptography.ciphers import NoneEncryption
+from encryption.ciphers import NoneEncryption
 
 
 class BobApplication(npyscreen.NPSAppManaged):
