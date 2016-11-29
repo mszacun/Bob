@@ -2,9 +2,11 @@
 
 \usepackage{polski}
 \usepackage{titlesec}
+\usepackage{setspace}
 \usepackage[english, polish]{babel}
 \usepackage[utf8]{inputenc}
 \usepackage{indentfirst}
+\setlength{\parskip}{1em}
 \usepackage{listings}
 \usepackage{graphicx}
 \usepackage{float}
@@ -213,7 +215,34 @@
           \item {\bfseries ViegenreCipher} - Klasa implementująca szyfr Viegenere, dostarczony klucz musi składać się
               wyłącznie z wielkich liter. Przesunięcie kolejnego znaku tekstu jawnego odpowiada pozycji w alfabecie kolejnego
               znaku klucza, w razie potrzeby klucz jest zapętlany.
+          \item {\bfseries AESCipher} - Klasa implementujące algorytm szyfrowania AES, wykorzystana została implementacja
+              dostarczana przez bibliotekę \emph{cryptography} napisaną w języku Python.
       \end{itemize}
+
+    \subsubsection{Implementacja szyfru AES}
+      Do implementacji szyfru AES została wykorzystana biblioteka \emph{cryptography} napisana w języku Python. Biblioteka
+      ta dostarcza zarówno klasę implementującą szyfr AES, klasy implementujące różnego rodzaju tryby wiązania oraz
+      klasy implementujące różne strategie dopełnianie niepełnych bloków, które mają być zaszyfrowane (padding).
+
+      Klasa \emph{Cipher} pozwala połączyć szyfr blokowy z wybranym trybem wiązania. Udostępnia ona dwie metody
+      \emph{encryptor} oraz \emph{decryptor}. Zwracają one obiekt kontekstu szyfrowania, który posiada metodę \emph{update}
+      pozwalającą na podawanie kolejnych porcji danych do zaszyfrowania/odszyfrowania oraz zwracającą pełne bloki
+      szyfrogramu/tekstu jawnego. Dane, które nie tworzą pełnego bloku są buforowane wewnątrz kontekstu szyfrowania.
+      Aby uzyskać końcówkę zaszyfrowanych danych należy wywołać metodę \emph{finalize}
+
+      Szyfry blokowe wymagają aby długość tekstu jawnego oraz szyfrogramu zawsze była wielokrotnością długości bloku
+      danego szyfru blokowego. Z tego powodu, niekiedy potrzebne jest dopełnienie wiadomości do rozmiaru bloku (padding).
+      Kontekst szyfrowania domyślnie nie aplikuje żadnego dopełnia do przekazywanych do niego bloków. Z tego powodu
+      w klasie AESCipher zostało zaimplementowane dopełnianie niezależne od kontekstu szyfrowania. Dopełniana jest
+      każda wiadomość tekstowa oraz plik przesyłany pomiędzy klientem a serwerem. Do dopełniania bloków wykorzystany został
+      algorytm PKCS7.
+
+      Interfejs konfiguracji algorytmu AES pozwala na podanie przez użytkownika zarówno klucza jak i wektora incjującego
+      dla trybu wiązania CBC. Akceptowane są wszystkie dozwolone dla algorytmu AES długości klucza (16, 24, 32 bajty).
+      Okienko konfiguracyjne pozwala zarówno na ręczne wprowadzenie wymaganych wartości przez użytkownika jak i na ich
+      losowe wygenerowanie. Wektor inicjujący jest przesyłany do rozmówcy w wiadomości mówiącej o zmianie wykorzystywanego
+      sposobu szyfrowania. Ten sam wektor inicjujący jest wykorzystywany do czasu zmiany go przez użytkownika bądź zmiany
+      wykorzystywanego szyfrowania.
 
   \subsection{Interfejs użytkownika}
   Klasy związane z interfejsem użytkownika znajdują się w folderze \emph{gui}. Wśród ważniejszych klas można wyróżnić:
