@@ -21,8 +21,8 @@ FILE_CHUNK_MESSAGE_TYPE = 'FILE_CHUNK'
 
 class NetworkProtocol(Thread):
     KNOWN_ENCRYPTIONS = [CaesarCipher, NoneEncryption, VigenereCipher, Rot13Cipher, AESCipher]
-    FILE_CHUNK_SIZE = 65668
-    RECV_BUFFER_SIZE = 131336
+    FILE_CHUNK_SIZE = 65536
+    RECV_BUFFER_SIZE = 131072
     BETWEEN_FILE_CHUNKS_TIME = 0.08
 
     def __init__(self, encryption):
