@@ -32,6 +32,8 @@ class Message(HistoryItem):
     def get_ciphertext_for_user_presentation(self):
         if self.encryption.returns_binary_data:
             return hexdump(self.ciphertext, result='return')
+        else:
+            return self.ciphertext
 
     def __str__(self):
         return '{} - {}: {}'.format(self.formatted_time, self.sender, self.plaintext)
