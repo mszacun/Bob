@@ -14,5 +14,6 @@ zip: manual clean
 	cp . /tmp/bob -r
 	rm /tmp/bob/img -rf
 	rm /tmp/bob/tags
+	rm /tmp/bob/.git -rf
 	zip -r bob.zip /tmp/bob
 	
