@@ -110,8 +110,11 @@ class AESCipher(SingleKeyCipher):
 
     def decrypt_binary(self, ciphertext, is_last_chunk):
         plaintext = self.decryptor.update(ciphertext)
-        if is_last_chunk and (len(ciphertext) % self.BLOCK_SIZE != 0):
-            plaintext = self._unpad(plaintext)
+        if is_last_chunk:
+            try:
+                plaintext = self._unpad(plaintext)
+            except:
+                pass
 
         return plaintext
 
@@ -135,3 +138,11 @@ class AESCipher(SingleKeyCipher):
 
     def __str__(self):
         return '{} (key: {}, IV: {})'.format(self.ENCRYPTION_NAME, dump(self.key, sep=''), dump(self.iv, sep=''))
+
+
+class SzacunProductionRSACipher(object):
+    def __init__(self, encrypt_key, decrypt_key):
+        self.encrypt_key = encrypt_key
+        self.decrypt_key = decrypt_key
+
+    def encrypt_binary(self, plaintext, is_last_chunk):
