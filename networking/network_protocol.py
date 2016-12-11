@@ -1,5 +1,6 @@
 import base64
 from threading import Thread
+from struct import pack, unpack, calcsize
 from Queue import Queue
 import json
 import os
@@ -22,8 +23,6 @@ FILE_CHUNK_MESSAGE_TYPE = 'FILE_CHUNK'
 class NetworkProtocol(Thread):
     KNOWN_ENCRYPTIONS = [CaesarCipher, NoneEncryption, VigenereCipher, Rot13Cipher, AESCipher]
     FILE_CHUNK_SIZE = 65536
-    RECV_BUFFER_SIZE = 131072
-    BETWEEN_FILE_CHUNKS_TIME = 0.08
 
     def __init__(self, encryption):
         super(NetworkProtocol, self).__init__()
@@ -37,7 +36,9 @@ class NetworkProtocol(Thread):
         self._send({'type': TEXT_MESSAGE_TYPE, 'content': message})
 
     def _send(self, message_dict):
-        self.socket.sendall(json.dumps(message_dict))
+        json_message = json.dumps(message_dict)
+        packed_length = pack('!I', len(json_message))
+        self.socket.sendall(packed_length + json_message)
 
     def disconnect(self):
         if hasattr(self, 'socket'):
@@ -58,9 +59,16 @@ class NetworkProtocol(Thread):
         self.incoming_file_transfer.open()
         self._send({'type': ACCEPT_FILE_TRANSMISSION_MESSAGE_TYPE})
 
+    def _recive(self):
+        incoming_message_length_packed = self.socket.recv(calcsize('!I'))
+        if incoming_message_length_packed:
+            incoming_message_length, = unpack('!I', incoming_message_length_packed)
+            data = self.socket.recv(incoming_message_length)
+            return data
+
     def main_loop(self):
         while True:
-            data = self.socket.recv(self.RECV_BUFFER_SIZE)
+            data = self._recive()
             if not data:
                 self.queue.put(DisconnectMessage())
             else:
@@ -99,7 +107,6 @@ class NetworkProtocol(Thread):
         while not self.outcoming_file_transfer.is_completed:
             chunk = self.outcoming_file_transfer.get_chunk(self.FILE_CHUNK_SIZE)
             self._send({'type': FILE_CHUNK_MESSAGE_TYPE, 'content': chunk})
-            sleep(self.BETWEEN_FILE_CHUNKS_TIME)
 
         message = FileSendingCompleteMessage(self.outcoming_file_transfer.filepath,
                                              self.outcoming_file_transfer.plaintext,
