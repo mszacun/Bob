@@ -9,7 +9,8 @@ from time import sleep
 from networking.file_transfer import IncomingFileTransfer, OutcomingFileTransfer
 from messages import TextMessage, DisconnectMessage, ConnectionEstablishedMessage, ChangeEncryptionMessage, \
      OfferFileTransmissionMessage, FileChunkMessage, FileSendingCompleteMessage, FileReceivingCompleteMessage
-from encryption.ciphers import CaesarCipher, NoneEncryption, VigenereCipher, Rot13Cipher, AESCipher
+from encryption.ciphers import CaesarCipher, NoneEncryption, VigenereCipher, Rot13Cipher, AESCipher, \
+     SzacunProductionRSACipher
 from encryption.base import NotThisEncryptionSerialized
 
 
@@ -18,6 +19,8 @@ CHANGE_ENCRYPTION_MESSAGE_TYPE = 'CHANGE_ENCRYPTION'
 OFFER_FILE_TRANSMISSION_MESSAGE_TYPE = 'OFFER_FILE_TRANSMISSION'
 ACCEPT_FILE_TRANSMISSION_MESSAGE_TYPE = 'ACCEPT_FILE_TRANSMISSION'
 FILE_CHUNK_MESSAGE_TYPE = 'FILE_CHUNK'
+RSA_KEY_EXCHANGE_REQUEST = 'RSA_KEY_EXCHANGE_REQUEST'
+RSA_KEY_EXCHANGE_RESPONSE = 'RSA_KEY_EXCHANGE_RESPONSE'
 
 
 class NetworkProtocol(Thread):
@@ -29,6 +32,12 @@ class NetworkProtocol(Thread):
         self.queue = Queue()
         self.daemon = True
         self.encryption = encryption
+
+        with open(self.public_key_file) as fp:
+            self.public_key = fp.read()
+
+        with open(self.private_key_file) as fp:
+            self.private_key = fp.read()
 
     def send_message(self, message):
         if self.encryption.returns_binary_data:
@@ -59,6 +68,9 @@ class NetworkProtocol(Thread):
         self.incoming_file_transfer.open()
         self._send({'type': ACCEPT_FILE_TRANSMISSION_MESSAGE_TYPE})
 
+    def init_rsa_key_exchange(self):
+        self._send({'type': RSA_KEY_EXCHANGE_REQUEST, 'public_key': self.public_key})
+
     def _recive(self):
         incoming_message_length_packed = self.socket.recv(calcsize('!I'))
         if incoming_message_length_packed:
@@ -87,6 +99,17 @@ class NetworkProtocol(Thread):
             self._send_file()
         if message_dict['type'] == FILE_CHUNK_MESSAGE_TYPE:
             self._recive_file_chunk(message_dict)
+        if message_dict['type'] == RSA_KEY_EXCHANGE_REQUEST:
+            self._dispatch_key_exchange(message_dict, True)
+        if message_dict['type'] == RSA_KEY_EXCHANGE_RESPONSE:
+            self._dispatch_key_exchange(message_dict, False)
+
+    def _dispatch_key_exchange(self, message_dict, should_send_response):
+        self.encryption = SzacunProductionRSACipher(str(message_dict['public_key']), self.private_key)
+        self.queue.put(ChangeEncryptionMessage(self.encryption))
+
+        if should_send_response:
+            self._send({'type': RSA_KEY_EXCHANGE_RESPONSE, 'public_key': self.public_key})
 
     def _recive_message(self, message_dict):
         content = message_dict['content']

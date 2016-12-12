@@ -2,3 +2,4 @@ npyscreen
 etaprogress
 hexdump
 cryptography
+pem

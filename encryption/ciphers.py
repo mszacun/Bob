@@ -1,11 +1,12 @@
-import os
-from itertools import cycle
+import math
+from itertools import cycle, izip_longest
 
 from hexdump import dump, dehex
 
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
+from cryptography.hazmat.primitives import serialization
 
 from encryption.base import CipherWithoutKey, ShiftBasedCipher, SingleKeyCipher
 
@@ -76,7 +77,21 @@ class VigenereCipher(ShiftBasedCipher, SingleKeyCipher):
         return self.UPPER_LETTERS.index(key_letter)
 
 
-class AESCipher(SingleKeyCipher):
+class BlockCipher(object):
+    def _pad(self, block, padding):
+        padder = padding.padder()
+        return padder.update(block) + padder.finalize()
+
+    def _unpad(self, block, padding):
+        try:
+            unpadder = padding.unpadder()
+            return unpadder.update(block) + unpadder.finalize()
+        except:
+            return block
+
+
+
+class AESCipher(SingleKeyCipher, BlockCipher):
     ALLOWED_KEY_LENGTHS = [16, 24, 32]
     BLOCK_SIZE = 16
     RECOMMENDED_KEY_LENGTH = 32
@@ -95,36 +110,25 @@ class AESCipher(SingleKeyCipher):
         self.padding = padding.PKCS7(self.BLOCK_SIZE * 8)
 
     def encrypt(self, plaintext):
-        padded_data = self._pad(plaintext)
+        padded_data = self._pad(plaintext, self.padding)
         return self.encryptor.update(padded_data)
 
     def encrypt_binary(self, plaintext, is_last_chunk):
         if is_last_chunk and (len(plaintext) % self.BLOCK_SIZE != 0):
-            plaintext = self._pad(plaintext)
+            plaintext = self._pad(plaintext, self.padding)
 
         return self.encryptor.update(plaintext)
 
     def decrypt(self, ciphertext):
         decrypted_data = self.decryptor.update(ciphertext)
-        return self._unpad(decrypted_data)
+        return self._unpad(decrypted_data, self.padding)
 
     def decrypt_binary(self, ciphertext, is_last_chunk):
         plaintext = self.decryptor.update(ciphertext)
         if is_last_chunk:
-            try:
-                plaintext = self._unpad(plaintext)
-            except:
-                pass
+            plaintext = self._unpad(plaintext, self.padding)
 
         return plaintext
-
-    def _pad(self, block):
-        padder = self.padding.padder()
-        return padder.update(block) + padder.finalize()
-
-    def _unpad(self, block):
-        unpadder = self.padding.unpadder()
-        return unpadder.update(block) + unpadder.finalize()
 
     def serialize(self):
         return {'name': self.ENCRYPTION_NAME, 'key': dump(self.key), 'iv': dump(self.iv)}
@@ -140,9 +144,98 @@ class AESCipher(SingleKeyCipher):
         return '{} (key: {}, IV: {})'.format(self.ENCRYPTION_NAME, dump(self.key, sep=''), dump(self.iv, sep=''))
 
 
-class SzacunProductionRSACipher(object):
-    def __init__(self, encrypt_key, decrypt_key):
-        self.encrypt_key = encrypt_key
-        self.decrypt_key = decrypt_key
+class SzacunProductionRSACipher(BlockCipher):
+    returns_binary_data = True
+
+    def __init__(self, his_public_key, my_private_key):
+        self.his_public_key = serialization.load_pem_public_key(his_public_key, default_backend())
+        self.my_private_key = serialization.load_pem_private_key(my_private_key, None, default_backend())
+
+        self.his_public_key_length = self._get_integer_byte_size(self.his_public_key.public_numbers().n)
+
+        self.my_private_key_n = self.my_private_key.private_numbers().q * self.my_private_key.private_numbers().p
+        self.my_private_key_length = self._get_integer_byte_size(self.my_private_key_n)
+
+        self.outcoming_block_size = self.his_public_key_length
+        self.incoming_block_size = self.my_private_key_length
+
+        self.outcoming_padder = padding.PKCS7(self.outcoming_block_size * 8)
+        self.incoming_padder = padding.PKCS7(self.incoming_block_size * 8)
+
+    def encrypt(self, plaintext):
+        return self.encrypt_binary(plaintext, True)
+
+    def decrypt(self, ciphertext):
+        return self.decrypt_binary(ciphertext, True)
 
     def encrypt_binary(self, plaintext, is_last_chunk):
+        if is_last_chunk:
+            plaintext = self._pad(plaintext, self.outcoming_padder)
+
+        blocks = self._split_into_blocks(plaintext, self.outcoming_block_size)
+        encrypted_blocks = [self._encrypt_block(block) for block in blocks]
+
+        return ''.join(encrypted_blocks)
+
+    def decrypt_binary(self, ciphertext, is_last_chunk):
+        blocks = self._split_into_blocks(ciphertext, self.incoming_block_size)
+        decrypted_blocks = [self._decrypt_block(block) for block in blocks]
+
+        plaintext = ''.join(decrypted_blocks)
+        if is_last_chunk:
+            plaintext = self._unpad(plaintext, self.incoming_padder)
+
+        return plaintext
+
+    def _decrypt_block(self, block):
+        as_int = self._bytes_to_int(block)
+        decrypted = self._decrypt_int(as_int)
+
+        return self._int_to_bytes(decrypted, len(block))
+
+    def _encrypt_block(self, block):
+        as_int = self._bytes_to_int(block)
+        encrypted = self._encrypt_int(as_int)
+
+        return self._int_to_bytes(encrypted, len(block))
+
+    def _bytes_to_int(self, bytes):
+        return int(dump(bytes, sep=''), 16)
+
+    def _decrypt_int(self, integer):
+        n = self.my_private_key_n
+        d = self.my_private_key.private_numbers().d
+
+        return pow(integer, d, n)
+
+    def _encrypt_int(self, integer):
+        n = self.his_public_key.public_numbers().n
+        e = self.his_public_key.public_numbers().e
+
+        return pow(integer, e, n)
+
+    def _int_to_bytes(self, integer, block_length):
+        bytes = ''
+        if integer == 0:
+            bytes = '\x00'
+
+        while integer > 0:
+            bytes = chr(integer & 0xFF) + bytes
+            integer >>= 8
+
+        required_padding = (block_length - len(bytes))
+        bytes = '\x00' * required_padding + bytes
+
+        return bytes
+
+    def _get_integer_byte_size(self, number):
+        return int(math.ceil(number.bit_length() / 8.0))
+
+    def _split_into_blocks(self, iterable, n, fillvalue=''):
+        "Collect data into fixed-length chunks or blocks"
+        args = [iter(iterable)] * n
+        for chunk in izip_longest(fillvalue=fillvalue, *args):
+            yield ''.join(chunk)
+
+    def __str__(self):
+        return 'RSA Cipher'

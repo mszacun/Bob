@@ -45,6 +45,7 @@ class MainWindow(npyscreen.FormMuttActiveWithMenus):
         encryption.addItem('Rot13 Cipher', partial(self._set_encryption, Rot13Cipher()))
         encryption.addItem('Vigenere Cipher', partial(self.configure_encryption, VigenereEncryptionConfigurationPopup))
         encryption.addItem('AES Cipher', partial(self.configure_encryption, AESEncryptionConfigurationPopup))
+        encryption.addItem('RSA Cipher', self.protocol.init_rsa_key_exchange)
         menu.addItem('Exit', self.exit_application)
         self.editw = 3
 
