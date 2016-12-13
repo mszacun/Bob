@@ -5,6 +5,7 @@ from Queue import Queue
 import json
 import os
 from time import sleep
+#from profilehooks import profile
 
 from networking.file_transfer import IncomingFileTransfer, OutcomingFileTransfer
 from messages import TextMessage, DisconnectMessage, ConnectionEstablishedMessage, ChangeEncryptionMessage, \
@@ -144,6 +145,7 @@ class NetworkProtocol(Thread):
         self.outcoming_file_transfer = None
 
 
+    #@profile(filename='/tmp/profile_results.profile')
     def _recive_file_chunk(self, message_dict):
         self.incoming_file_transfer.write(message_dict['content'], message_dict['is_last'])
         message = FileChunkMessage(self.incoming_file_transfer.received_bytes)
