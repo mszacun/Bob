@@ -17,18 +17,16 @@ class IncomingFileTransfer(object):
     def close(self):
         self.file.close()
 
-    def write(self, base64_encrypted_data):
+    def write(self, base64_encrypted_data, is_completed):
+        self.is_completed = is_completed
+
         encrypted_data = base64.b64decode(base64_encrypted_data)
-        self.received_bytes += len(encrypted_data)
         data = self.encryption.decrypt_binary(encrypted_data, self.is_completed)
+        self.received_bytes += len(data)
         self.file.write(data)
 
         self.plaintext += data
         self.ciphertext += encrypted_data
-
-    @property
-    def is_completed(self):
-        return self.received_bytes >= self.expected_size
 
 
 class OutcomingFileTransfer(object):

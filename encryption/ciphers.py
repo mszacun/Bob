@@ -159,8 +159,10 @@ class SzacunProductionRSACipher(BlockCipher):
         self.outcoming_block_size = self.his_public_key_length
         self.incoming_block_size = self.my_private_key_length
 
-        self.outcoming_padder = padding.PKCS7(self.outcoming_block_size * 8)
-        self.incoming_padder = padding.PKCS7(self.incoming_block_size * 8)
+        self.outcoming_padder = padding.PKCS7((self.outcoming_block_size - 1) * 8)
+        self.incoming_padder = padding.PKCS7((self.incoming_block_size - 1) * 8)
+
+        self.preferred_file_chunk = self.outcoming_block_size - 1
 
     def encrypt(self, plaintext):
         return self.encrypt_binary(plaintext, True)
@@ -172,7 +174,7 @@ class SzacunProductionRSACipher(BlockCipher):
         if is_last_chunk:
             plaintext = self._pad(plaintext, self.outcoming_padder)
 
-        blocks = self._split_into_blocks(plaintext, self.outcoming_block_size)
+        blocks = self._split_into_blocks(plaintext, self.outcoming_block_size - 1)
         encrypted_blocks = [self._encrypt_block(block) for block in blocks]
 
         return ''.join(encrypted_blocks)
@@ -191,13 +193,13 @@ class SzacunProductionRSACipher(BlockCipher):
         as_int = self._bytes_to_int(block)
         decrypted = self._decrypt_int(as_int)
 
-        return self._int_to_bytes(decrypted, len(block))
+        return self._int_to_bytes(decrypted, self.incoming_block_size - 1)
 
     def _encrypt_block(self, block):
         as_int = self._bytes_to_int(block)
         encrypted = self._encrypt_int(as_int)
 
-        return self._int_to_bytes(encrypted, len(block))
+        return self._int_to_bytes(encrypted, self.outcoming_block_size)
 
     def _bytes_to_int(self, bytes):
         return int(dump(bytes, sep=''), 16)

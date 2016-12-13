@@ -127,9 +127,12 @@ class NetworkProtocol(Thread):
     def _send_file(self):
         self.outcoming_file_transfer.open()
 
+        file_chunk_size = getattr(self.encryption, 'preferred_file_chunk', self.FILE_CHUNK_SIZE)
+
         while not self.outcoming_file_transfer.is_completed:
-            chunk = self.outcoming_file_transfer.get_chunk(self.FILE_CHUNK_SIZE)
-            self._send({'type': FILE_CHUNK_MESSAGE_TYPE, 'content': chunk})
+            chunk = self.outcoming_file_transfer.get_chunk(file_chunk_size)
+            self._send({'type': FILE_CHUNK_MESSAGE_TYPE, 'content': chunk,
+                        'is_last': self.outcoming_file_transfer.is_completed})
 
         message = FileSendingCompleteMessage(self.outcoming_file_transfer.filepath,
                                              self.outcoming_file_transfer.plaintext,
@@ -140,7 +143,7 @@ class NetworkProtocol(Thread):
 
 
     def _recive_file_chunk(self, message_dict):
-        self.incoming_file_transfer.write(message_dict['content'])
+        self.incoming_file_transfer.write(message_dict['content'], message_dict['is_last'])
         message = FileChunkMessage(self.incoming_file_transfer.received_bytes)
         self.queue.put(message)
 
