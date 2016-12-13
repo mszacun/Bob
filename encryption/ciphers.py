@@ -6,7 +6,8 @@ from hexdump import dump, dehex
 from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
-from cryptography.hazmat.primitives import serialization
+from cryptography.hazmat.primitives.asymmetric import padding as asymmetric_padding
+from cryptography.hazmat.primitives import serialization, hashes
 
 from encryption.base import CipherWithoutKey, ShiftBasedCipher, SingleKeyCipher
 
@@ -144,7 +145,7 @@ class AESCipher(SingleKeyCipher, BlockCipher):
         return '{} (key: {}, IV: {})'.format(self.ENCRYPTION_NAME, dump(self.key, sep=''), dump(self.iv, sep=''))
 
 
-class SzacunProductionRSACipher(BlockCipher):
+class RSACipher(BlockCipher):
     returns_binary_data = True
 
     def __init__(self, his_public_key, my_private_key):
@@ -159,9 +160,6 @@ class SzacunProductionRSACipher(BlockCipher):
         self.outcoming_block_size = self.his_public_key_length
         self.incoming_block_size = self.my_private_key_length
 
-        self.outcoming_padder = padding.PKCS7((self.outcoming_block_size - 1) * 8)
-        self.incoming_padder = padding.PKCS7((self.incoming_block_size - 1) * 8)
-
         self.preferred_file_chunk = self.outcoming_block_size - 1
 
     def encrypt(self, plaintext):
@@ -169,6 +167,23 @@ class SzacunProductionRSACipher(BlockCipher):
 
     def decrypt(self, ciphertext):
         return self.decrypt_binary(ciphertext, True)
+
+    def _get_integer_byte_size(self, number):
+        return int(math.ceil(number.bit_length() / 8.0))
+
+    def _split_into_blocks(self, iterable, n, fillvalue=''):
+        "Collect data into fixed-length chunks or blocks"
+        args = [iter(iterable)] * n
+        for chunk in izip_longest(fillvalue=fillvalue, *args):
+            yield ''.join(chunk)
+
+
+class SzacunProductionRSACipher(RSACipher):
+    def __init__(self, his_public_key, my_private_key):
+        super(SzacunProductionRSACipher, self).__init__(his_public_key, my_private_key)
+
+        self.outcoming_padder = padding.PKCS7((self.outcoming_block_size - 1) * 8)
+        self.incoming_padder = padding.PKCS7((self.incoming_block_size - 1) * 8)
 
     def encrypt_binary(self, plaintext, is_last_chunk):
         if is_last_chunk:
@@ -230,14 +245,39 @@ class SzacunProductionRSACipher(BlockCipher):
 
         return bytes
 
-    def _get_integer_byte_size(self, number):
-        return int(math.ceil(number.bit_length() / 8.0))
+    def __str__(self):
+        return 'SzacunProductionRSACipher'
 
-    def _split_into_blocks(self, iterable, n, fillvalue=''):
-        "Collect data into fixed-length chunks or blocks"
-        args = [iter(iterable)] * n
-        for chunk in izip_longest(fillvalue=fillvalue, *args):
-            yield ''.join(chunk)
+
+class LibraryRSACipher(RSACipher):
+    def __init__(self, his_public_key, my_private_key):
+        super(LibraryRSACipher, self).__init__(his_public_key, my_private_key)
+
+        self.hash_algorithm = hashes.SHA1()
+        self.padding = asymmetric_padding.OAEP(mgf=asymmetric_padding.MGF1(algorithm=self.hash_algorithm),
+                                               algorithm=self.hash_algorithm, label=None)
+
+        self.outcoming_message_size = self.outcoming_block_size - 2 * self.hash_algorithm.digest_size - 2
+
+    def encrypt_binary(self, plaintext, is_last_chunk):
+        blocks = self._split_into_blocks(plaintext, self.outcoming_message_size)
+        encrypted_blocks = [self._encrypt_block(block) for block in blocks]
+
+        return ''.join(encrypted_blocks)
+
+    def decrypt_binary(self, ciphertext, is_last_chunk):
+        blocks = self._split_into_blocks(ciphertext, self.incoming_block_size)
+        decrypted_blocks = [self._decrypt_block(block) for block in blocks]
+
+        plaintext = ''.join(decrypted_blocks)
+
+        return plaintext
+
+    def _encrypt_block(self, block):
+        return self.his_public_key.encrypt(block, self.padding)
+
+    def _decrypt_block(self, block):
+        return self.my_private_key.decrypt(block, self.padding)
 
     def __str__(self):
-        return 'RSA Cipher'
+        return 'LibraryRSACipher'

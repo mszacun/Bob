@@ -10,7 +10,7 @@ from networking.file_transfer import IncomingFileTransfer, OutcomingFileTransfer
 from messages import TextMessage, DisconnectMessage, ConnectionEstablishedMessage, ChangeEncryptionMessage, \
      OfferFileTransmissionMessage, FileChunkMessage, FileSendingCompleteMessage, FileReceivingCompleteMessage
 from encryption.ciphers import CaesarCipher, NoneEncryption, VigenereCipher, Rot13Cipher, AESCipher, \
-     SzacunProductionRSACipher
+     SzacunProductionRSACipher, LibraryRSACipher
 from encryption.base import NotThisEncryptionSerialized
 
 
@@ -68,8 +68,8 @@ class NetworkProtocol(Thread):
         self.incoming_file_transfer.open()
         self._send({'type': ACCEPT_FILE_TRANSMISSION_MESSAGE_TYPE})
 
-    def init_rsa_key_exchange(self):
-        self._send({'type': RSA_KEY_EXCHANGE_REQUEST, 'public_key': self.public_key})
+    def init_rsa_key_exchange(self, use_library):
+        self._send({'type': RSA_KEY_EXCHANGE_REQUEST, 'public_key': self.public_key, 'use_library': use_library})
 
     def _recive(self):
         incoming_message_length_packed = self.socket.recv(calcsize('!I'))
@@ -105,11 +105,13 @@ class NetworkProtocol(Thread):
             self._dispatch_key_exchange(message_dict, False)
 
     def _dispatch_key_exchange(self, message_dict, should_send_response):
-        self.encryption = SzacunProductionRSACipher(str(message_dict['public_key']), self.private_key)
+        cipher_class = LibraryRSACipher if message_dict['use_library'] else SzacunProductionRSACipher
+        self.encryption = cipher_class(str(message_dict['public_key']), self.private_key)
         self.queue.put(ChangeEncryptionMessage(self.encryption))
 
         if should_send_response:
-            self._send({'type': RSA_KEY_EXCHANGE_RESPONSE, 'public_key': self.public_key})
+            self._send({'type': RSA_KEY_EXCHANGE_RESPONSE, 'public_key': self.public_key,
+                        'use_library': message_dict['use_library']})
 
     def _recive_message(self, message_dict):
         content = message_dict['content']
