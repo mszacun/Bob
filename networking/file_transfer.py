@@ -25,8 +25,8 @@ class IncomingFileTransfer(object):
         self.received_bytes += len(data)
         self.file.write(data)
 
-        self.plaintext += data
-        self.ciphertext += encrypted_data
+#        self.plaintext += data
+        #self.ciphertext += encrypted_data
 
 
 class OutcomingFileTransfer(object):
@@ -49,7 +49,7 @@ class OutcomingFileTransfer(object):
         self.is_completed = len(data) < chunk_size
         encrypted_data = self.encryption.encrypt_binary(data, self.is_completed)
 
-        self.plaintext += data
-        self.ciphertext += encrypted_data
+        #self.plaintext += data
+        #self.ciphertext += encrypted_data
 
         return base64.b64encode(encrypted_data)
