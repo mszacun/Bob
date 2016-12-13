@@ -232,18 +232,18 @@ class SzacunProductionRSACipher(RSACipher):
         return pow(integer, e, n)
 
     def _int_to_bytes(self, integer, block_length):
-        bytes = ''
+        bytes = []
         if integer == 0:
-            bytes = '\x00'
+            bytes = ['\x00']
 
         while integer > 0:
-            bytes = chr(integer & 0xFF) + bytes
+            bytes.insert(0, chr(integer & 0xFF))
             integer >>= 8
 
         required_padding = (block_length - len(bytes))
-        bytes = '\x00' * required_padding + bytes
+        bytes = ['\x00'] * required_padding + bytes
 
-        return bytes
+        return ''.join(bytes)
 
     def __str__(self):
         return 'SzacunProductionRSACipher'
