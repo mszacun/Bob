@@ -245,6 +245,92 @@
       sposobu szyfrowania. Ten sam wektor inicjujący jest wykorzystywany do czasu zmiany go przez użytkownika bądź zmiany
       wykorzystywanego szyfrowania.
 
+    \subsubsection{Implementacja szyfru RSA}
+      \paragraph{Opis algorytmu RSA}
+        Algorytm RSA jest asymetrycznym algorytmem szyfrowania, co oznacza, że wykorzystuje on dwa powiązane ze sobą
+        klucze umożliwiające przeprowadzanie operacji szyfrowania i deszyfrowania. Wśród tych kluczy wyróżniony jest
+        klucz prywatny, który jak sama nazwa mowi powinien być utrzymany w tajemnicy, oraz klucz publiczny, który
+        udostępniany jest każdemu zainteresowanemu. Klucza prywatnego nie można w łatwy sposób odtworzyć z klucza
+        publicznego. Klucz publiczny jest używany do zaszyfrowania informacji, natomiast klucz prywatny do jej odszyfrowania.
+        Jedynie adresat może odczytać wiadomość, ponieważ jedynie on ma dostęp do klucza prywatnego. W algorytmie RSA
+        bezpieczeństwo szyfrowania opiera się na trudności faktoryzacji dużych liczb złożonych.  W celu wygenerowania
+        pary kluczy należy:
+        \begin{itemize}
+          \item Wybrać losowo dwie duże liczby pierwsze \emph{p} i \emph{q}
+          \item Obliczyć wartość \( n = p * q \)
+          \item Obliczyć wartość \( \phi = (p - 1) * (q - 1) \)
+          \item Wybrać liczbę \emph{e} względnie pierwszą z \( \phi \)
+          \item Znaleźć liczbę \emph{d}, gdzie jej różnica z odwrotnością liczby \emph{e} jest podzielna przez \( \phi \)
+      \end{itemize}
+      Po wykonaniu powyższych kroków liczby \( (n,e) \) stanowią klucz publiczny, a liczby \( (n,d) \) klucz prywatny. \\
+      Szyfrowanie polega na obliczeniu liczby \( c = t^e\mod n \) \\
+      Deszyfrowanie polega na obliczeniu liczby \( t = c^d\mod n \)
+
+      \paragraph{Własna implementacja szyfru RSA}
+        Własna implementacja szyfru RSA została umieszczona w klasie \emph{SzacunProductionRSACipher} w pliku
+        \emph{encryption/ciphers.py}.
+        Może zostać ona uaktywniona poprzez jej wybranie w~menu aplikacji, jak opisano powyżej. Wielkość bloku szyfrowania
+        ustalana jest na podstawie długości używanego klucza, jeśli długość klucza w bajtach wynosi \emph{n}, to długość
+        bloku tekstu jawnego wynosi \( n - 1 \). Ostatni blok wiadomości jest dopełniany w razie potrzeby, zgodnie z
+        algorytmem PKCS7. Każdy blok składający się z bajtów zamieniany jest na liczbę całkowitą,
+        która szyfrowana jest zgodnie z opisaną powyżej procedurą szyfrowania algorytmu RSA. Wynikiem szyfrowania jest
+        liczba, która zostaje z powrotem zamieniona na ciąg bajtów, o~długości odpowiadającej długości bloku szyfrogramu,
+        czyli \emph{n}. W razie potrzeby liczba dopełniana jest zerami z przodu.
+
+        Zaszyfrowany blok szyfrogramu zostaje przesłany do rozmówcy, tam zostaje on zamieniony na liczbę i poddany
+        procedurze odszyfrowania opisanej powyżej, a następnie zamieniany z powrotem na ciąg bajtów. Otrzymany blok tekstu
+        jawnego jest w razie potrzeby oczyszczany z dopełnienia.
+
+      \paragraph{Biblioteczna implementacja szyfru RSA}
+        Biblioteczna implementacja szyfru RSA znajduje się w klasie \emph{LibraryRSACipher} w pliku \emph{encryption/ciphers.py}.
+        Została tutaj wykorzystana wcześniej opisywana bibliotek cryptography napisana w języku Python. Do dopełniania
+        bloków został wybrany algorytm OAEP, w którym jako funkcja skrótu wykorzystany został algorytm SHA1. Dopełnienie
+        to nakłada ograniczenie na rozmiar bloku tekstu jawnego:
+        \begin{equation}
+            M_{len} = n - 2 * H_{len} - 2
+        \end{equation}
+        gdzie \emph{n} to długość używanego klucza, a \( H_{len} \) to długość skrótu, w przypadku SHA1 20 bajtów.
+        Biblioteka cryptography nie zapewnia dzielenia wiadomości na bloki, w związku z czym podział na bloki odpowiedniej
+        wielkość został zaimplementowany samodzielnie.
+
+  \subsection{Porównanie wydajności algorytmów szyfrowania}
+    Badania zostały przeprowadzone przy wykorzystaniu następujących parametrów:
+    \begin{itemize}
+      \item Długość klucza RSA: \( 2048 \) bitów
+      \item Długość klucza AES: \( 256 \) bitów
+      \item Rozmiar przesyłanego pliku: \( 15000000 \) bajtów \( = 14,36 \) megabajtów
+    \end{itemize}
+
+    \begin{center}
+      \begin{tabular}{ | l | l |}
+      \hline
+      Nazwa algorytmu & Czas transferu pliku \\ \hline
+      AESCipher & 1 sekunda \\ \hline
+      SzacunProductionRSACipher & 12 minut 3 sekundy  \\ \hline
+      LibraryRSACipher & 2 minuty 34 sekundy \\ \hline
+      \end{tabular}
+    \end{center}
+
+    \begin{figure}[H]
+        \centering
+        \includegraphics[scale=0.4]{aes_cipher}
+        \caption{Transfer pliku z wykorzystaniem algorytmu AES}
+        \label{AES_FILE_TRANSFER}
+    \end{figure}
+    \begin{figure}[H]
+        \centering
+        \includegraphics[scale=0.4]{szacun_production_rsa}
+        \caption{Transfer pliku z wykorzystaniem własnej implementacji algorytmu RSA}
+        \label{SZACUN_RSA_FILE_TRANSFER}
+    \end{figure}
+    \begin{figure}[H]
+        \centering
+        \includegraphics[scale=0.4]{library_rsa_cipher}
+        \caption{Transfer pliku z wykorzystaniem bibliotecznej implementacji algorytmu RSA}
+        \label{LIBRARY_RSA_FILE_TRANSFER}
+    \end{figure}
+
+
   \subsection{Interfejs użytkownika}
   Klasy związane z interfejsem użytkownika znajdują się w folderze \emph{gui}. Wśród ważniejszych klas można wyróżnić:
   \begin{itemize}
