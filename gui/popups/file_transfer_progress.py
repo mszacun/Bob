@@ -1,6 +1,7 @@
 import npyscreen
 
 from etaprogress.progress import ProgressBarWget
+from etaprogress.components.eta_conversions import eta_letters
 
 from messages import FileChunkMessage, FileReceivingCompleteMessage
 from gui.utils import humanize_bytes
@@ -34,7 +35,8 @@ class FileTransferProgressPopup(npyscreen.Popup):
         self.speed = self.add(npyscreen.TitleFixedText, name='Avg. speed:', value='', editable=False)
         self.bytes_received = self.add(npyscreen.TitleFixedText, name='Completed', value = '-', editable=False)
         self.eta = self.add(npyscreen.TitleFixedText, name='ETA:', value='--:--', editable=False)
-        self.progressbar = self.add(ProcessBar, value=0, out_of=self.expected_number_of_bytes, rely=7)
+        self.elapsed = self.add(npyscreen.TitleFixedText, name='Elapsed', value='--:--', editable=False)
+        self.progressbar = self.add(ProcessBar, value=0, out_of=self.expected_number_of_bytes, rely=8)
 
     def set_progress(self, number_of_bytes_received_so_far):
         number_of_bytes_received_so_far = min(number_of_bytes_received_so_far, self.expected_number_of_bytes) #FIXME
@@ -45,6 +47,9 @@ class FileTransferProgressPopup(npyscreen.Popup):
 
         self.eta.value = self.eta_progressbar._eta_string
         self.eta.display()
+
+        self.elapsed.value = eta_letters(self.eta_progressbar._eta.elapsed)
+        self.elapsed.display()
 
         completed_str = '{} / {}'.format(humanize_bytes(number_of_bytes_received_so_far),
                                          humanize_bytes(self.expected_number_of_bytes))
