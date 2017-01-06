@@ -47,6 +47,7 @@ class MainWindow(npyscreen.FormMuttActiveWithMenus):
         encryption.addItem('AES Cipher', partial(self.configure_encryption, AESEncryptionConfigurationPopup))
         encryption.addItem('SzacunProductionRSA Cipher', partial(self.protocol.init_rsa_key_exchange, False))
         encryption.addItem('LibraryRSA Cipher', partial(self.protocol.init_rsa_key_exchange, True))
+        menu.addItem('Close menu')
         menu.addItem('Exit', self.exit_application)
         self.editw = 3
 
