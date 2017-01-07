@@ -6,7 +6,7 @@ import npyscreen
 from messages import TextMessage, DisconnectMessage, ConnectionEstablishedMessage, ChangeEncryptionMessage, \
      OfferFileTransmissionMessage, FileChunkMessage, FileSendingCompleteMessage
 
-from encryption.ciphers import NoneEncryption, Rot13Cipher
+from encryption.ciphers import NoneEncryption, Rot13Cipher, SzacunProductionRSACipher, LibraryRSACipher
 from gui.command_box import HistoryRemeberingTextCommandBox
 from gui.highlightning import MessageHighlightMultiLine
 from gui.controler import SendMessageActionController
@@ -44,9 +44,9 @@ class MainWindow(npyscreen.FormMuttActiveWithMenus):
         encryption.addItem('Caesar Cipher', partial(self.configure_encryption, CaesarEncryptionConfigurationPopup))
         encryption.addItem('Rot13 Cipher', partial(self._set_encryption, Rot13Cipher()))
         encryption.addItem('Vigenere Cipher', partial(self.configure_encryption, VigenereEncryptionConfigurationPopup))
-        encryption.addItem('AES Cipher', partial(self.configure_encryption, AESEncryptionConfigurationPopup))
-        encryption.addItem('SzacunProductionRSA Cipher', partial(self.protocol.init_rsa_key_exchange, False))
-        encryption.addItem('LibraryRSA Cipher', partial(self.protocol.init_rsa_key_exchange, True))
+        encryption.addItem('AES Cipher', self._configure_aes_cipher)
+        encryption.addItem('SzacunProductionRSA Cipher', partial(self._set_asymmetric_encryption, SzacunProductionRSACipher))
+        encryption.addItem('LibraryRSA Cipher', partial(self._set_asymmetric_encryption, LibraryRSACipher))
         menu.addItem('Close menu')
         menu.addItem('Exit', self.exit_application)
         self.editw = 3
@@ -110,8 +110,20 @@ class MainWindow(npyscreen.FormMuttActiveWithMenus):
         if configuration_popup.value:
             self._set_encryption(configuration_popup.build_encryption(), set_by_remote=False)
 
+    def _configure_aes_cipher(self):
+        configuration_popup = AESEncryptionConfigurationPopup(self.protocol.participant_public_key,
+                                                              self.protocol.private_key)
+        configuration_popup.edit()
+        if configuration_popup.value:
+            self._set_encryption(configuration_popup.build_encryption(), set_by_remote=False)
+
+
     def configure_none_encryption(self):
-        self._set_encryption(NoneEncryption(), set_by_remote=False)
+        self._set_encryption(NoneEncryption())
+
+    def _set_asymmetric_encryption(self, asymmetrict_encryption_cls):
+        encryption = asymmetrict_encryption_cls(self.protocol.participant_public_key, self.protocol.private_key)
+        self._set_encryption(encryption)
 
     def _set_encryption(self, encryption, set_by_remote=False):
         self.current_encryption = encryption

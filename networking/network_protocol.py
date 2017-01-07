@@ -25,7 +25,8 @@ RSA_KEY_EXCHANGE_RESPONSE = 'RSA_KEY_EXCHANGE_RESPONSE'
 
 
 class NetworkProtocol(Thread):
-    KNOWN_ENCRYPTIONS = [CaesarCipher, NoneEncryption, VigenereCipher, Rot13Cipher, AESCipher]
+    KNOWN_ENCRYPTIONS = [CaesarCipher, NoneEncryption, VigenereCipher, Rot13Cipher, AESCipher,
+                         SzacunProductionRSACipher, LibraryRSACipher]
     FILE_CHUNK_SIZE = 65536
 
     def __init__(self, encryption):
@@ -69,8 +70,8 @@ class NetworkProtocol(Thread):
         self.incoming_file_transfer.open()
         self._send({'type': ACCEPT_FILE_TRANSMISSION_MESSAGE_TYPE})
 
-    def init_rsa_key_exchange(self, use_library):
-        self._send({'type': RSA_KEY_EXCHANGE_REQUEST, 'public_key': self.public_key, 'use_library': use_library})
+    def init_rsa_key_exchange(self):
+        self._send({'type': RSA_KEY_EXCHANGE_REQUEST, 'public_key': self.public_key})
 
     def _recive(self):
         incoming_message_length_packed = self.socket.recv(calcsize('!I'))
@@ -100,19 +101,12 @@ class NetworkProtocol(Thread):
             self._send_file()
         if message_dict['type'] == FILE_CHUNK_MESSAGE_TYPE:
             self._recive_file_chunk(message_dict)
+
         if message_dict['type'] == RSA_KEY_EXCHANGE_REQUEST:
-            self._dispatch_key_exchange(message_dict, True)
+            self.participant_public_key = str(message_dict['public_key'])
+            self._send({'type': RSA_KEY_EXCHANGE_RESPONSE, 'public_key': self.public_key})
         if message_dict['type'] == RSA_KEY_EXCHANGE_RESPONSE:
-            self._dispatch_key_exchange(message_dict, False)
-
-    def _dispatch_key_exchange(self, message_dict, should_send_response):
-        cipher_class = LibraryRSACipher if message_dict['use_library'] else SzacunProductionRSACipher
-        self.encryption = cipher_class(str(message_dict['public_key']), self.private_key)
-        self.queue.put(ChangeEncryptionMessage(self.encryption))
-
-        if should_send_response:
-            self._send({'type': RSA_KEY_EXCHANGE_RESPONSE, 'public_key': self.public_key,
-                        'use_library': message_dict['use_library']})
+            self.participant_public_key = str(message_dict['public_key'])
 
     def _recive_message(self, message_dict):
         content = message_dict['content']
@@ -123,7 +117,8 @@ class NetworkProtocol(Thread):
     def _dispatch_change_encryption(self, message_dict):
         for known_encryption in self.KNOWN_ENCRYPTIONS:
             try:
-                return known_encryption.deserialize(message_dict['encryption_params'])
+                return known_encryption.deserialize(message_dict['encryption_params'], self.participant_public_key,
+                                                    self.private_key)
             except NotThisEncryptionSerialized:
                 pass
 

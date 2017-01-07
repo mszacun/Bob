@@ -25,6 +25,8 @@ class Server(NetworkProtocol):
         self.server_socket.listen(5)
         self.socket, self.client_address = self.server_socket.accept()
 
+        self.init_rsa_key_exchange()
+
         self.queue.put(ConnectionEstablishedMessage(self.client_address))
 
         self.main_loop()

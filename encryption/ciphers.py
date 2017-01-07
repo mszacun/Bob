@@ -1,5 +1,4 @@
-import math
-from itertools import cycle, izip_longest
+from itertools import cycle
 
 from hexdump import dump, dehex
 
@@ -7,9 +6,10 @@ from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import padding
 from cryptography.hazmat.primitives.asymmetric import padding as asymmetric_padding
-from cryptography.hazmat.primitives import serialization, hashes
+from cryptography.hazmat.primitives import hashes
 
-from encryption.base import CipherWithoutKey, ShiftBasedCipher, SingleKeyCipher
+from encryption.base import CipherWithoutKey, ShiftBasedCipher, SingleKeyCipher, BlockCipher, RSACipher, \
+     NotThisEncryptionSerialized
 
 
 class NoneEncryption(CipherWithoutKey):
@@ -78,20 +78,6 @@ class VigenereCipher(ShiftBasedCipher, SingleKeyCipher):
         return self.UPPER_LETTERS.index(key_letter)
 
 
-class BlockCipher(object):
-    def _pad(self, block, padding):
-        padder = padding.padder()
-        return padder.update(block) + padder.finalize()
-
-    def _unpad(self, block, padding):
-        try:
-            unpadder = padding.unpadder()
-            return unpadder.update(block) + unpadder.finalize()
-        except:
-            return block
-
-
-
 class AESCipher(SingleKeyCipher, BlockCipher):
     ALLOWED_KEY_LENGTHS = [16, 24, 32]
     BLOCK_SIZE = 16
@@ -101,7 +87,7 @@ class AESCipher(SingleKeyCipher, BlockCipher):
 
     returns_binary_data = True
 
-    def __init__(self, key, iv):
+    def __init__(self, key, iv, his_public_key=None, my_private_key=None):
         super(AESCipher, self).__init__(key)
 
         self.iv = iv
@@ -109,6 +95,9 @@ class AESCipher(SingleKeyCipher, BlockCipher):
         self.encryptor = self.cipher.encryptor()
         self.decryptor = self.cipher.decryptor()
         self.padding = padding.PKCS7(self.BLOCK_SIZE * 8)
+
+        self.his_public_key = his_public_key
+        self.my_private_key = my_private_key
 
     def encrypt(self, plaintext):
         padded_data = self._pad(plaintext, self.padding)
@@ -132,53 +121,36 @@ class AESCipher(SingleKeyCipher, BlockCipher):
         return plaintext
 
     def serialize(self):
-        return {'name': self.ENCRYPTION_NAME, 'key': dump(self.key), 'iv': dump(self.iv)}
+        encryption_params = {'name': self.ENCRYPTION_NAME, 'iv': dump(self.iv)}
+        if self.his_public_key and self.my_private_key:
+            encrypted_key = SzacunProductionRSACipher(self.his_public_key, self.my_private_key).encrypt(dump(self.key))
+            encryption_params['key'] = dump(encrypted_key)
+            encryption_params['is_key_encrypted'] = True
+        else:
+            encryption_params['key'] = dump(self.key)
+            encryption_params['is_key_encrypted'] = False
+
+        return encryption_params
 
     @classmethod
-    def deserialize(cls, encryption_params):
+    def deserialize(cls, encryption_params, his_public_key, my_private_key):
         if encryption_params['name'] != cls.ENCRYPTION_NAME:
             raise NotThisEncryptionSerialized()
 
-        return cls(key=dehex(encryption_params['key']), iv=dehex(encryption_params['iv']))
+        if encryption_params['is_key_encrypted']:
+            key = SzacunProductionRSACipher(his_public_key, my_private_key).decrypt(dehex(encryption_params['key']))
+        else:
+            key = encryption_params['key']
+
+        return cls(key=dehex(key), iv=dehex(encryption_params['iv']))
 
     def __str__(self):
         return '{} (key: {}, IV: {})'.format(self.ENCRYPTION_NAME, dump(self.key, sep=''), dump(self.iv, sep=''))
 
 
-class RSACipher(BlockCipher):
-    returns_binary_data = True
-
-    def __init__(self, his_public_key, my_private_key):
-        self.his_public_key = serialization.load_pem_public_key(his_public_key, default_backend())
-        self.my_private_key = serialization.load_pem_private_key(my_private_key, None, default_backend())
-
-        self.his_public_key_length = self._get_integer_byte_size(self.his_public_key.public_numbers().n)
-
-        self.my_private_key_n = self.my_private_key.private_numbers().q * self.my_private_key.private_numbers().p
-        self.my_private_key_length = self._get_integer_byte_size(self.my_private_key_n)
-
-        self.outcoming_block_size = self.his_public_key_length
-        self.incoming_block_size = self.my_private_key_length
-
-        self.preferred_file_chunk = self.outcoming_block_size - 1
-
-    def encrypt(self, plaintext):
-        return self.encrypt_binary(plaintext, True)
-
-    def decrypt(self, ciphertext):
-        return self.decrypt_binary(ciphertext, True)
-
-    def _get_integer_byte_size(self, number):
-        return int(math.ceil(number.bit_length() / 8.0))
-
-    def _split_into_blocks(self, iterable, n, fillvalue=''):
-        "Collect data into fixed-length chunks or blocks"
-        args = [iter(iterable)] * n
-        for chunk in izip_longest(fillvalue=fillvalue, *args):
-            yield ''.join(chunk)
-
-
 class SzacunProductionRSACipher(RSACipher):
+    ENCRYPTION_NAME = 'SzacunProductionRSACipher'
+
     def __init__(self, his_public_key, my_private_key):
         super(SzacunProductionRSACipher, self).__init__(his_public_key, my_private_key)
 
@@ -250,6 +222,8 @@ class SzacunProductionRSACipher(RSACipher):
 
 
 class LibraryRSACipher(RSACipher):
+    ENCRYPTION_NAME = 'LibraryRSACipher'
+
     def __init__(self, his_public_key, my_private_key):
         super(LibraryRSACipher, self).__init__(his_public_key, my_private_key)
 

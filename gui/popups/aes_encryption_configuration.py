@@ -37,8 +37,11 @@ class GenerateBytesButton(npyscreen.MiniButtonPress):
 class AESEncryptionConfigurationPopup(ConfirmCancelPopup):
     DEFAULT_COLUMNS = 100
 
-    def __init__(self):
+    def __init__(self, his_public_key, my_private_key):
         super(AESEncryptionConfigurationPopup, self).__init__(name='Configure AES cipher')
+
+        self.his_public_key = his_public_key
+        self.my_private_key = my_private_key
 
     def create(self):
         self.key_textbox = self.add(TitleHexTextfield, name='Key', value='')
@@ -54,6 +57,7 @@ class AESEncryptionConfigurationPopup(ConfirmCancelPopup):
         self.add(npyscreen.FixedText, value='Generate IV:', rely=6, editable=False)
         self.generate_iv = self.add(GenerateBytesButton, name='16 bytes', rely=6, relx=15,
                                     number_of_bytes_to_generate=AESCipher.IV_LENGTH, target_textbox=self.iv_textbox)
+        self.send_key_using_rsa = self.add(npyscreen.Checkbox, name='Send key using RSA', rely=8)
         self.preserve_selected_widget = True
 
     def on_ok(self):
@@ -89,7 +93,11 @@ class AESEncryptionConfigurationPopup(ConfirmCancelPopup):
     def build_encryption(self):
         key = dehex(self.key_textbox.value)
         iv = dehex(self.iv_textbox.value)
-        return AESCipher(key=key, iv=iv)
+
+        if self.send_key_using_rsa.value:
+            return AESCipher(key=key, iv=iv, his_public_key=self.his_public_key, my_private_key=self.my_private_key)
+        else:
+            return AESCipher(key=key, iv=iv)
 
     def _convert_to_hex_lengths(self, allowed_lengths):
         return [l * 2 for l in allowed_lengths]
