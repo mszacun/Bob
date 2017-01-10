@@ -293,6 +293,23 @@
         Biblioteka cryptography nie zapewnia dzielenia wiadomości na bloki, w związku z czym podział na bloki odpowiedniej
         wielkość został zaimplementowany samodzielnie.
 
+        \paragraph{Używanie szyfrowania RSA}
+        Szyfrowanie RSA w aplikacji Bob może zostać wykorzystane na dwa sposoby:
+        \begin{enumerate}
+          \item Do szyfrowania wszystkich przesyłanych wiadomości oraz plików - w tym celu należy z menu Encrpytion
+            wybrać odpowiednią opcję: SzacunProductionRSACipher aby uaktywnić własną implementację szyfru RSA,
+            bądź LibraryRSACipher, aby wykorzystać implementację biblioteczną.
+          \item Do zaszyfrowania klucza algorytmu AES - w tym celu z menu Encryption należ wybrać opcję AESCipher,
+            a następnie w okienku konfiguracyjnym po wpisaniu, bądź wygenerowaniu klucza zaznaczyć opcję
+            ,,Send key using RSA''. Do zaszyfrowania klucza algorytmu AES zawsze wykorzystywana jest własna
+            implementacja algorytmu RSA. Po wybraniu tej opcji, klucz sesyjny zostaje w postaci zaszyfrowanej
+            wysłany do rozmówcy, gdzie następuje jego odszyfrowanie i automatyczne uaktywnienie odpowiedniego szyfrowania.
+        \end{enumerate}
+        Wymiana kluczy publicznych między klientem a serwerem następuje zaraz po uzyskaniu połączenia. Najpierw swój
+        klucz do klienta wysyła serwer, a następnie klient jako odpowiedź wysyła swój klucz publiczny. Dzięki tej
+        procedurze odpowiednie klucze publiczne dostępne są w każdej chwili i mogą zostać wykorzystane zarówno
+        do szyfrowania wszystkich wiadomości i plików jak i do szyfrowania kluczy sesyjnych
+
   \subsection{Porównanie wydajności algorytmów szyfrowania}
     Badania zostały przeprowadzone przy wykorzystaniu następujących parametrów:
     \begin{itemize}
