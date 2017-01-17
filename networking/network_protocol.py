@@ -5,6 +5,7 @@ from Queue import Queue
 import json
 import os
 from time import sleep
+from hexdump import dump
 #from profilehooks import profile
 
 from networking.file_transfer import IncomingFileTransfer, OutcomingFileTransfer
@@ -13,6 +14,7 @@ from messages import TextMessage, DisconnectMessage, ConnectionEstablishedMessag
 from encryption.ciphers import CaesarCipher, NoneEncryption, VigenereCipher, Rot13Cipher, AESCipher, \
      SzacunProductionRSACipher, LibraryRSACipher
 from encryption.base import NotThisEncryptionSerialized
+from encryption.signing import sign_file
 
 
 TEXT_MESSAGE_TYPE = 'TEXT_MESSAGE'
@@ -61,13 +63,14 @@ class NetworkProtocol(Thread):
         self.encryption = encryption
 
     def offer_file_transmission(self, filepath, encryption):
+        file_signature = sign_file(filepath, self.participant_public_key, self.private_key)
         message = {'type': OFFER_FILE_TRANSMISSION_MESSAGE_TYPE, 'filename': os.path.basename(filepath),
-                   'number_of_bytes': os.path.getsize(filepath)}
+                   'number_of_bytes': os.path.getsize(filepath), 'signature': dump(file_signature)}
         self._send(message)
         self.outcoming_file_transfer = OutcomingFileTransfer(filepath, encryption)
 
     def receive_file(self, save_destination, expected_number_of_bytes, encryption):
-        self.incoming_file_transfer = IncomingFileTransfer(save_destination, expected_number_of_bytes, encryption)
+        self.incoming_file_transfer.set_destination(save_destination)
         self.incoming_file_transfer.open()
         self._send({'type': ACCEPT_FILE_TRANSMISSION_MESSAGE_TYPE})
 
@@ -96,6 +99,9 @@ class NetworkProtocol(Thread):
             self.encryption = self._dispatch_change_encryption(message_dict)
             self.queue.put(ChangeEncryptionMessage(self.encryption))
         if message_dict['type'] == OFFER_FILE_TRANSMISSION_MESSAGE_TYPE:
+            self.incoming_file_transfer = IncomingFileTransfer(message_dict['filename'],
+                                                               message_dict['number_of_bytes'], self.encryption,
+                                                               message_dict['signature'])
             message = OfferFileTransmissionMessage(message_dict['filename'], message_dict['number_of_bytes'])
             self.queue.put(message)
         if message_dict['type'] == ACCEPT_FILE_TRANSMISSION_MESSAGE_TYPE:
@@ -151,5 +157,6 @@ class NetworkProtocol(Thread):
             self.incoming_file_transfer.close()
             self.queue.put(FileReceivingCompleteMessage(self.incoming_file_transfer.filepath,
                                                         self.incoming_file_transfer.plaintext,
-                                                        self.incoming_file_transfer.ciphertext))
+                                                        self.incoming_file_transfer.ciphertext,
+                                                        self.incoming_file_transfer.received_signature))
             self.incoming_file_transfer = None

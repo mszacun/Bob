@@ -68,4 +68,6 @@ class FileTransferProgressPopup(npyscreen.Popup):
             self.set_progress(message.number_of_bytes_received_so_far)
         if isinstance(message, FileReceivingCompleteMessage):
             self.file_transfer = FileTransfer(self.protocol.encryption, self.save_destination, message.plaintext,
-                                              message.ciphertext, self.protocol.participant_name)
+                                              message.ciphertext, self.protocol.participant_public_key,
+                                              self.protocol.private_key, self.protocol.participant_name,
+                                              message.received_signature)

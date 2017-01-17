@@ -2,13 +2,14 @@ import base64
 
 
 class IncomingFileTransfer(object):
-    def __init__(self, filepath, expected_size, encryption):
-        self.filepath = filepath
+    def __init__(self, original_filename, expected_size, encryption, received_signature):
+        self.original_filename = original_filename
         self.expected_size = expected_size
         self.encryption = encryption
+        self.received_signature = received_signature
 
-        self.ciphertext = ''
-        self.plaintext = ''
+        self.ciphertext = []
+        self.plaintext = []
 
     def open(self):
         self.file = open(self.filepath, 'wb')
@@ -16,6 +17,9 @@ class IncomingFileTransfer(object):
 
     def close(self):
         self.file.close()
+
+    def set_destination(self, filepath):
+        self.filepath = filepath
 
     def write(self, base64_encrypted_data, is_completed):
         self.is_completed = is_completed
@@ -25,8 +29,8 @@ class IncomingFileTransfer(object):
         self.received_bytes += len(data)
         self.file.write(data)
 
-#        self.plaintext += data
-        #self.ciphertext += encrypted_data
+        self.plaintext.append(data)
+        self.ciphertext.append(encrypted_data)
 
 
 class OutcomingFileTransfer(object):
@@ -34,8 +38,8 @@ class OutcomingFileTransfer(object):
         self.filepath = filepath
         self.encryption = encryption
 
-        self.ciphertext = ''
-        self.plaintext = ''
+        self.ciphertext = []
+        self.plaintext = []
 
     def open(self):
         self.file = open(self.filepath, 'rb')
@@ -49,7 +53,7 @@ class OutcomingFileTransfer(object):
         self.is_completed = len(data) < chunk_size
         encrypted_data = self.encryption.encrypt_binary(data, self.is_completed)
 
-        #self.plaintext += data
-        #self.ciphertext += encrypted_data
+        self.plaintext.append(data)
+        self.ciphertext.append(encrypted_data)
 
         return base64.b64encode(encrypted_data)

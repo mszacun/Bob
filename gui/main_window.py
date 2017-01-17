@@ -74,7 +74,8 @@ class MainWindow(npyscreen.FormMuttActiveWithMenus):
             self._ask_to_accept_file_transmission(message.filename, message.number_of_bytes)
         if isinstance(message, FileSendingCompleteMessage):
             file_transfer = FileTransfer(self.current_encryption, message.filepath, message.plaintext,
-                                         message.ciphertext)
+                                         message.ciphertext, self.protocol.participant_public_key,
+                                         self.protocol.private_key)
             self.wMain.add_message(file_transfer)
 
     def refresh_statusbar(self, status_message=None, encryption_message=None):

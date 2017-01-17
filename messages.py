@@ -40,7 +40,8 @@ class FileSendingCompleteMessage(object):
 
 
 class FileReceivingCompleteMessage(object):
-    def __init__(self, filepath, plaintext, ciphertext):
+    def __init__(self, filepath, plaintext, ciphertext, received_signature):
         self.filepath = filepath
         self.plaintext = plaintext
         self.ciphertext = ciphertext
+        self.received_signature = received_signature
