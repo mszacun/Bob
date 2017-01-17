@@ -151,8 +151,18 @@ class AESCipher(SingleKeyCipher, BlockCipher):
 class SzacunProductionRSACipher(RSACipher):
     ENCRYPTION_NAME = 'SzacunProductionRSACipher'
 
-    def __init__(self, his_public_key, my_private_key):
+    def __init__(self, his_public_key, my_private_key, swap_keys=False):
         super(SzacunProductionRSACipher, self).__init__(his_public_key, my_private_key)
+
+        self.his_n = self.his_public_key.public_numbers().n
+        self.his_e = self.his_public_key.public_numbers().e
+        self.my_n = self.my_private_key_n
+        self.my_d = self.my_private_key.private_numbers().d
+
+        if swap_keys:
+            self.outcoming_block_size, self.incoming_block_size = self.incoming_block_size, self.outcoming_block_size
+            self.his_n, self.my_n = self.my_n, self.his_n
+            self.his_e, self.my_d = self.my_d, self.his_e
 
         self.outcoming_padder = padding.PKCS7((self.outcoming_block_size - 1) * 8)
         self.incoming_padder = padding.PKCS7((self.incoming_block_size - 1) * 8)
@@ -192,16 +202,10 @@ class SzacunProductionRSACipher(RSACipher):
         return int(dump(bytes, sep=''), 16)
 
     def _decrypt_int(self, integer):
-        n = self.my_private_key_n
-        d = self.my_private_key.private_numbers().d
-
-        return pow(integer, d, n)
+        return pow(integer, self.my_d, self.my_n)
 
     def _encrypt_int(self, integer):
-        n = self.his_public_key.public_numbers().n
-        e = self.his_public_key.public_numbers().e
-
-        return pow(integer, e, n)
+        return pow(integer, self.his_e, self.his_n)
 
     def _int_to_bytes(self, integer, block_length):
         bytes = []

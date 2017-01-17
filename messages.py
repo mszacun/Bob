@@ -1,6 +1,7 @@
 class TextMessage(object):
-    def __init__(self, content):
+    def __init__(self, content, signature):
         self.content = content
+        self.signature = signature
 
 
 class DisconnectMessage(object):

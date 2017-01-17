@@ -59,8 +59,9 @@ class MainWindow(npyscreen.FormMuttActiveWithMenus):
 
     def dispatch(self, message):
         if isinstance(message, TextMessage):
-            message = Message(self.current_encryption, ciphertext=message.content,
-                              sender=self.protocol.participant_name)
+            message = Message(self.current_encryption, self.protocol.participant_public_key, self.protocol.private_key,
+                              ciphertext=message.content, sender=self.protocol.participant_name,
+                              received_signature=message.signature)
             self.wMain.add_message(message)
         if isinstance(message, DisconnectMessage):
             self.exit_application()
@@ -89,8 +90,9 @@ class MainWindow(npyscreen.FormMuttActiveWithMenus):
 
     def send_message(self, message_text):
         if message_text:
-            message = Message(self.current_encryption, plaintext=message_text)
-            self.protocol.send_message(message.ciphertext)
+            message = Message(self.current_encryption, self.protocol.participant_public_key, self.protocol.private_key,
+                              plaintext=message_text)
+            self.protocol.send_message(message)
             self.wMain.add_message(message)
 
     def exit_application(self):

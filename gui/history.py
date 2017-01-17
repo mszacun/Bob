@@ -1,13 +1,16 @@
 import os
 from datetime import datetime
 
-from hexdump import hexdump
+from hexdump import hexdump, dump, dehex
+
+from encryption.signing import sign_bytes, hash_bytes, decrypt_signature
 
 
 class HistoryItem(object):
     YOU_SENDER = 'You'
 
-    def __init__(self, encryption, plaintext=None, ciphertext=None, sender=None, time=None):
+    def __init__(self, encryption, plaintext=None, ciphertext=None, sender=None,
+                 time=None):
         self.encryption = encryption
         self.sender = sender or self.YOU_SENDER
         self.time = time or datetime.now()
@@ -21,7 +24,8 @@ class HistoryItem(object):
 
 
 class Message(HistoryItem):
-    def __init__(self, encryption, plaintext=None, ciphertext=None, sender=None, time=None):
+    def __init__(self, encryption, his_public_key, my_private_key, plaintext=None, ciphertext=None, sender=None,
+                 received_signature=None, time=None):
         if plaintext:
             ciphertext = encryption.encrypt(plaintext)
         else:
@@ -29,11 +33,25 @@ class Message(HistoryItem):
 
         super(Message, self).__init__(encryption, plaintext, ciphertext, sender, time)
 
+        self._calculate_signatures(his_public_key, my_private_key, received_signature)
+
     def get_ciphertext_for_user_presentation(self):
         if self.encryption.returns_binary_data:
             return hexdump(self.ciphertext, result='return')
         else:
             return self.ciphertext
+
+    def _calculate_signatures(self, his_public_key, my_private_key, received_signature):
+        self.calculated_hash = dump(hash_bytes(str(self.plaintext)))
+
+        if self.sender == self.YOU_SENDER:
+            self.calculated_signature = dump(sign_bytes(self.plaintext, his_public_key, my_private_key))
+            self.received_signature = '-----'
+            self.received_hash = '-----'
+        else:
+            self.calculated_signature = '-----'
+            self.received_signature = received_signature
+            self.received_hash = dump(decrypt_signature(dehex(received_signature), his_public_key, my_private_key))
 
     def __str__(self):
         return '{} - {}: {}'.format(self.formatted_time, self.sender, self.plaintext)

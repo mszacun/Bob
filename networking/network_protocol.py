@@ -42,9 +42,10 @@ class NetworkProtocol(Thread):
             self.private_key = fp.read()
 
     def send_message(self, message):
+        to_send = message.ciphertext
         if self.encryption.returns_binary_data:
-            message = base64.b64encode(message)
-        self._send({'type': TEXT_MESSAGE_TYPE, 'content': message})
+            to_send = base64.b64encode(to_send)
+        self._send({'type': TEXT_MESSAGE_TYPE, 'content': to_send, 'signature': message.calculated_signature})
 
     def _send(self, message_dict):
         json_message = json.dumps(message_dict)
@@ -112,7 +113,7 @@ class NetworkProtocol(Thread):
         content = message_dict['content']
         if self.encryption.returns_binary_data:
             content = base64.b64decode(content)
-        self.queue.put(TextMessage(content))
+        self.queue.put(TextMessage(content, message_dict['signature']))
 
     def _dispatch_change_encryption(self, message_dict):
         for known_encryption in self.KNOWN_ENCRYPTIONS:

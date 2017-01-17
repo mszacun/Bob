@@ -63,6 +63,16 @@ class MessageDetailsPopup(npyscreen.Popup):
         self.add(npyscreen.TitleFixedText, name='Sender', value=self.message.sender)
         self.add(npyscreen.TitleFixedText, name='Time', value=self.message.formatted_time)
         self.add(npyscreen.TitleFixedText, name='Encryption', value=str(self.message.encryption))
+
+        self.add(npyscreen.TitleFixedText, name='Calculated signature', value=self.message.calculated_signature, relx=35, rely=1,
+                 begin_entry_at=25)
+        self.add(npyscreen.TitleFixedText, name='Calculated hash', value=self.message.calculated_hash, relx=35, rely=2,
+                 begin_entry_at=21)
+        self.add(npyscreen.TitleFixedText, name='Received hash', value=self.message.received_hash, relx=35, rely=3,
+                 begin_entry_at=21)
+        self.add(npyscreen.TitleFixedText, name='Received signature', value=self.message.received_signature, relx=35,
+                 rely=4, begin_entry_at=21)
+
         self.plaintext = self.add(PagerBoxed, name='Plaintext', values=self.message.plaintext.split('\n'),
                                   max_height=7, rely=6)
         user_readable_ciphertext = self.message.get_ciphertext_for_user_presentation().split('\n')
@@ -73,6 +83,6 @@ class MessageDetailsPopup(npyscreen.Popup):
 
 
     def edit(self):
-        self.editw = 5
+        self.editw = 7
         self.preserve_selected_widget = True
         super(MessageDetailsPopup, self).edit()
