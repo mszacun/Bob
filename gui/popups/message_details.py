@@ -51,7 +51,7 @@ class PagerBoxed(npyscreen.BoxTitle):
 
 class MessageDetailsPopup(npyscreen.Popup):
     DEFAULT_LINES = 24
-    DEFAULT_COLUMNS = 100
+    DEFAULT_COLUMNS = 110
 
     def __init__(self, message):
         self.preserve_selected_widget = True
@@ -67,11 +67,11 @@ class MessageDetailsPopup(npyscreen.Popup):
         self.add(npyscreen.TitleFixedText, name='Calculated signature', value=self.message.calculated_signature, relx=35, rely=1,
                  begin_entry_at=25)
         self.add(npyscreen.TitleFixedText, name='Calculated hash', value=self.message.calculated_hash, relx=35, rely=2,
-                 begin_entry_at=21)
+                 begin_entry_at=25)
         self.add(npyscreen.TitleFixedText, name='Received hash', value=self.message.received_hash, relx=35, rely=3,
-                 begin_entry_at=21)
+                 begin_entry_at=25)
         self.add(npyscreen.TitleFixedText, name='Received signature', value=self.message.received_signature, relx=35,
-                 rely=4, begin_entry_at=21)
+                 rely=4, begin_entry_at=25)
 
         self.plaintext = self.add(PagerBoxed, name='Plaintext', values=self.message.plaintext.split('\n'),
                                   max_height=7, rely=6)
@@ -83,6 +83,6 @@ class MessageDetailsPopup(npyscreen.Popup):
 
 
     def edit(self):
-        self.editw = 7
+        self.editw = 8
         self.preserve_selected_widget = True
         super(MessageDetailsPopup, self).edit()
