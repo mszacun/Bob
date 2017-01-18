@@ -347,6 +347,78 @@
         \label{LIBRARY_RSA_FILE_TRANSFER}
     \end{figure}
 
+  \subsection{Podpis cyfrowy}
+    Dzięki zaimplementowaniu i wykorzystaniu podpisy cyfrowego w aplikacji Bob możliwe jest zweryfikowanie integralności
+    oraz pochodzenia wymienianych wiadomości oraz plików od właściwego nadawcy.
+
+    \subsubsection{Implementacja}
+      Implementacja podpisu cyfrowego oparta została o asymetryczny algorytm szyfrowania \emph{SzacunProductionRSACipher}
+      oraz funkcję skrótu \emph{SHA-512}. Przy wykorzystaniu algorytmu \emph{SzacunProductionRSACipher} w podpisie cyfrowym
+      role klucza prywatnego oraz publicznego są odwrócone. Oznacza to, że klucz prywatny jest używany w operacji \emph{encrypt}
+      (do składania podpisu), a klucz publiczny w operacji \emph{decrypt} (do weryfikacji podpisu). Aby używać algorytmu
+      \emph{SzacunProductionRSACipher} w tym trybie należy przekazać w jego konstruktorze flagę swap\_keys ustawioną
+      na wartość True (domyślnie jest to False).
+
+      \subsubsection{Wykorzystywane funkcje}
+        Funkcje wykorzystywane do realizacji podpisu cyfrowego znajdują się w pliku \emph{encryption/signing.py}.
+        Są to:
+
+        \begin{itemize}
+          \item \emph{hash\_bytes} - funkcja obliczająca wartość funkcji skrótu SHA-512 dla przekazanego
+            jako parametr ciągu bajtów,
+          \item \emph{hash\_file} - funkcja obliczająca wartość funkcji skrótu SHA-512 dla pliku znajdującego
+            się w lokalizacji podanej jako parametr funkcji,
+          \item \emph{sign\_hash} - funkcja aplikująca operację szyfrowania z użyciem klucza prywatnego na przekazanym
+            jako parametr skrócie podpisywanej wiadomości (pliku),
+          \item \emph{sign\_bytes} - funkcja jednocześnie obliczająca wartość funkcji skrótu dla przekazanego ciągu
+            bajtów, a następnie ten skrót szyfrująca (z użyciem klucza prywatnego),
+          \item \emph{sign\_file} - funkcja jednocześnie obliczająca wartość funkcji skrótu dla pliku znajdującego się
+            w przekazanej lokalizacji, a następnie ten skrót szyfrująca (z użyciem klucza prywatnego),
+         \item \emph{decrypt\_signature} - funkcja ,,odzyskująca'' skrót wiadomości (pliku) z podpisu cyfrowego,
+           po obliczeniu skrótu dla otrzymanych danych może odbyć się weryfikacja podpisu cyfrowego.
+        \end{itemize}
+
+      \subsubsection{Wykorzystanie podpisu cyfrowego w aplikacji Bob}
+        Podpis cyfrowy jest integralną funkcjonalnością aplikacji Bob, jest on na stałe włączony. Każda przesyłana
+        wiadomość oraz plik są podpisywane cyfrowo, niezależnie od faktu wykorzystywania szyfrowania oraz jego rodzaju.
+
+        \paragraph{Podpisywanie wiadomości tekstowych}
+          Po obliczeniu wartości podpisu cyfrowego dla wysyłanej wiadomości tekstowej, jest on doklejany do pakietu
+          przenoszącego treść wiadomości i weryfikowany natychmiast po jej odebraniu przez odbiorcę
+
+          \begin{figure}[H]
+              \centering
+              \includegraphics[scale=0.7]{pakiet_z_wiadomoscia_z_podpisem}
+              \caption{Pakiet zawierający wiadomość tekstową z podpisem cyfrowym}
+              \label{MESSAGE_WITH_SIGNATURE_PACKET}
+          \end{figure}
+
+        \paragraph{Podpisywanie przesyłanych plików}
+          W aplikacji Bob pliki przesyłane są w 64 kilobajtowych fragmentach (związane jest to z możliwością wyświetlania
+          postępu przesyłania pliku oraz limitu długości pojedynczego pakietu TCP). W celu zminimalizowania liczby operacji
+          szyfrowania algorytmem \emph{SzacunProductionRSACipher} plik podpisywany jest jako całość (nie jest podpisywany
+          każdy fragment oddzielnie). Podpis cyfrowy pliku jest przesyłany w pakiecie pytającym o zgodę na odebranie pliku,
+          przed rozpoczęciem jego transmisji. Weryfikacja podpisu odbywa się po odebraniu całego pliku.
+
+          \begin{figure}[H]
+              \centering
+              \includegraphics[scale=0.7]{oferta_transmisji_pliku_z_podpisem}
+              \caption{Pakiet zawierający ofertę transmisji pliku oraz jego podpis cyfrowy}
+              \label{PACKET_WITH_FILE_TRANSMISSION_OFFER_AND_SIGNATURE}
+          \end{figure}
+
+      \subsubsection{Weryfikacja podpisu cyfrowego przez użytkownika}
+        W dowolnej chwili użytkownik aplikacji Bob może samodzielnie podejrzeć wartość oraz zweryfikować podpisy cyfrowe
+        otrzymanych wiadomości oraz plików. Dla wiadomości wysłanych wyświetlana jest wartość obliczonego skrótu oraz
+        podpisu cyfrowego. Informacje te są dostępne po wyświetleniu szczegółów wiadomości w oknie historii przy pomocy
+        klawisza \emph{ENTER}.
+
+        \begin{figure}[tp]
+            \centering
+            \includegraphics[scale=0.5]{szczegoly_wiadomosci_z_podpisem}
+            \caption{Szczegóły odebranej/wysłanej wiadomości wraz z wartościami podpisu cyfrowego}
+            \label{DIGITAL_SIGNATURE}
+        \end{figure}
 
   \subsection{Interfejs użytkownika}
   Klasy związane z interfejsem użytkownika znajdują się w folderze \emph{gui}. Wśród ważniejszych klas można wyróżnić:
