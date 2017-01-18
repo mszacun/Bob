@@ -21,6 +21,7 @@ class Server(NetworkProtocol):
 
     def run(self):
         self.server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         self.server_socket.bind(('0.0.0.0', self.local_port))
         self.server_socket.listen(5)
         self.socket, self.client_address = self.server_socket.accept()
