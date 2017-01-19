@@ -8,8 +8,7 @@ class Client(NetworkProtocol):
     initial_panel_caption = 'connecting to server...'
     participant_name = 'Server'
     myself_name = 'Client'
-    private_key_file = 'client_private_key.pem'
-    public_key_file = 'client_public_key.pem'
+    keys_folder = 'pki/client1'
 
     def __init__(self, hostname, remote_port, encryption):
         super(Client, self).__init__(encryption)

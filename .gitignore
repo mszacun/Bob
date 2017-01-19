@@ -91,4 +91,8 @@ ENV/
 
 tags
 instrukcja.pdf
+instrukcja.out
+todo.txt
 *.pem
+pki/
+key_build/

@@ -3,6 +3,7 @@ import math
 
 from cryptography.hazmat.backends import default_backend
 from cryptography.hazmat.primitives import serialization
+from cryptography import x509
 
 class NotThisEncryptionSerialized(Exception):
     pass
@@ -89,8 +90,9 @@ class BlockCipher(object):
 class RSACipher(BlockCipher):
     returns_binary_data = True
 
-    def __init__(self, his_public_key, my_private_key):
-        self.his_public_key = serialization.load_pem_public_key(his_public_key, default_backend())
+    def __init__(self, his_public_certificate, my_private_key):
+        parsed_certificate = x509.load_pem_x509_certificate(his_public_certificate, default_backend())
+        self.his_public_key = parsed_certificate.public_key()
         self.my_private_key = serialization.load_pem_private_key(my_private_key, None, default_backend())
 
         self.his_public_key_length = self._get_integer_byte_size(self.his_public_key.public_numbers().n)

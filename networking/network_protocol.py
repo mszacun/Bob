@@ -37,11 +37,19 @@ class NetworkProtocol(Thread):
         self.daemon = True
         self.encryption = encryption
 
+        self._load_asymetric_keys()
+
+    def _load_asymetric_keys(self):
+        hostname = os.path.basename(self.keys_folder)
+        self.public_key_file = os.path.join(self.keys_folder, '{}.crt'.format(hostname))
+        self.private_key_file = os.path.join(self.keys_folder, '{}.key'.format(hostname))
+
         with open(self.public_key_file) as fp:
             self.public_key = fp.read()
 
         with open(self.private_key_file) as fp:
             self.private_key = fp.read()
+
 
     def send_message(self, message):
         to_send = message.ciphertext

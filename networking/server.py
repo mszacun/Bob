@@ -8,8 +8,7 @@ class Server(NetworkProtocol):
     initial_panel_caption = 'waiting for connection...'
     participant_name = 'Client'
     myself_name = 'Server'
-    private_key_file = 'server_private_key.pem'
-    public_key_file = 'server_public_key.pem'
+    keys_folder = 'pki/server1'
 
     def __init__(self, local_port, encryption):
         super(Server, self).__init__(encryption)
