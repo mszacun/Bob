@@ -4,7 +4,7 @@ import os
 import npyscreen
 
 from messages import TextMessage, DisconnectMessage, ConnectionEstablishedMessage, ChangeEncryptionMessage, \
-     OfferFileTransmissionMessage, FileChunkMessage, FileSendingCompleteMessage
+     OfferFileTransmissionMessage, FileChunkMessage, FileSendingCompleteMessage, CertificateVerificationMessage
 
 from encryption.ciphers import NoneEncryption, Rot13Cipher, SzacunProductionRSACipher, LibraryRSACipher
 from gui.command_box import HistoryRemeberingTextCommandBox
@@ -18,6 +18,7 @@ from gui.popups.caesar_encryption_configuration import CaesarEncryptionConfigura
 from gui.popups.vigenere_encryption_configuration import VigenereEncryptionConfigurationPopup
 from gui.popups.aes_encryption_configuration import AESEncryptionConfigurationPopup
 from gui.popups.file_transfer_progress import FileTransferProgressPopup
+from gui.popups.certificate_verification_result import CertificateVerificationResultPopup
 
 
 class MainWindow(npyscreen.FormMuttActiveWithMenus):
@@ -77,6 +78,9 @@ class MainWindow(npyscreen.FormMuttActiveWithMenus):
                                          message.ciphertext, self.protocol.participant_public_key,
                                          self.protocol.private_key)
             self.wMain.add_message(file_transfer)
+        if isinstance(message, CertificateVerificationMessage):
+            popup = CertificateVerificationResultPopup(message.certificate_verification_result)
+            popup.edit()
 
     def refresh_statusbar(self, status_message=None, encryption_message=None):
         status_message = status_message or self.status_message

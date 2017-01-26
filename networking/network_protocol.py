@@ -6,15 +6,18 @@ import json
 import os
 from time import sleep
 from hexdump import dump
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
 #from profilehooks import profile
 
 from networking.file_transfer import IncomingFileTransfer, OutcomingFileTransfer
 from messages import TextMessage, DisconnectMessage, ConnectionEstablishedMessage, ChangeEncryptionMessage, \
-     OfferFileTransmissionMessage, FileChunkMessage, FileSendingCompleteMessage, FileReceivingCompleteMessage
+     OfferFileTransmissionMessage, FileChunkMessage, FileSendingCompleteMessage, FileReceivingCompleteMessage, \
+     CertificateVerificationMessage
 from encryption.ciphers import CaesarCipher, NoneEncryption, VigenereCipher, Rot13Cipher, AESCipher, \
      SzacunProductionRSACipher, LibraryRSACipher
 from encryption.base import NotThisEncryptionSerialized
-from encryption.signing import sign_file
+from encryption.signing import sign_file, CertificateVerificationResult
 
 
 TEXT_MESSAGE_TYPE = 'TEXT_MESSAGE'
@@ -30,6 +33,7 @@ class NetworkProtocol(Thread):
     KNOWN_ENCRYPTIONS = [CaesarCipher, NoneEncryption, VigenereCipher, Rot13Cipher, AESCipher,
                          SzacunProductionRSACipher, LibraryRSACipher]
     FILE_CHUNK_SIZE = 65536
+    CA_PUBLIC_KEY_PATH = 'pki/ca/ca.crt'
 
     def __init__(self, encryption):
         super(NetworkProtocol, self).__init__()
@@ -41,15 +45,14 @@ class NetworkProtocol(Thread):
 
     def _load_asymetric_keys(self):
         hostname = os.path.basename(self.keys_folder)
-        self.public_key_file = os.path.join(self.keys_folder, '{}.crt'.format(hostname))
-        self.private_key_file = os.path.join(self.keys_folder, '{}.key'.format(hostname))
 
-        with open(self.public_key_file) as fp:
-            self.public_key = fp.read()
+        self.public_key = self._read_file(os.path.join(self.keys_folder, '{}.crt'.format(hostname)))
+        self.private_key = self._read_file(os.path.join(self.keys_folder, '{}.key'.format(hostname)))
+        self.ca_public_key = self._read_file(self.CA_PUBLIC_KEY_PATH)
 
-        with open(self.private_key_file) as fp:
-            self.private_key = fp.read()
-
+    def _read_file(self, filepath):
+        with open(filepath) as fp:
+            return fp.read()
 
     def send_message(self, message):
         to_send = message.ciphertext
@@ -118,10 +121,16 @@ class NetworkProtocol(Thread):
             self._recive_file_chunk(message_dict)
 
         if message_dict['type'] == RSA_KEY_EXCHANGE_REQUEST:
-            self.participant_public_key = str(message_dict['public_key'])
             self._send({'type': RSA_KEY_EXCHANGE_RESPONSE, 'public_key': self.public_key})
+            self._validate_received_certificate(str(message_dict['public_key']))
         if message_dict['type'] == RSA_KEY_EXCHANGE_RESPONSE:
-            self.participant_public_key = str(message_dict['public_key'])
+            self._validate_received_certificate(str(message_dict['public_key']))
+
+    def _validate_received_certificate(self, received_certificate):
+        parsed_certificate = x509.load_pem_x509_certificate(received_certificate, default_backend())
+        verification_result = CertificateVerificationResult(parsed_certificate, self.ca_public_key, self.private_key)
+        self.participant_public_key = received_certificate
+        self.queue.put(CertificateVerificationMessage(verification_result))
 
     def _recive_message(self, message_dict):
         content = message_dict['content']

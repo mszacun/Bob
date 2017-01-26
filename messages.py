@@ -45,3 +45,8 @@ class FileReceivingCompleteMessage(object):
         self.plaintext = plaintext
         self.ciphertext = ciphertext
         self.received_signature = received_signature
+
+
+class CertificateVerificationMessage(object):
+    def __init__(self, certificate_verification_result):
+        self.certificate_verification_result = certificate_verification_result

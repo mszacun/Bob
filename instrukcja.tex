@@ -413,11 +413,54 @@
         podpisu cyfrowego. Informacje te są dostępne po wyświetleniu szczegółów wiadomości w oknie historii przy pomocy
         klawisza \emph{ENTER}.
 
-        \begin{figure}[tp]
+        \begin{figure}[H]
             \centering
-            \includegraphics[scale=0.5]{szczegoly_wiadomosci_z_podpisem}
+            \includegraphics[scale=0.45]{szczegoly_wiadomosci_z_podpisem}
             \caption{Szczegóły odebranej/wysłanej wiadomości wraz z wartościami podpisu cyfrowego}
             \label{DIGITAL_SIGNATURE}
+        \end{figure}
+
+  \subsection{Wykorzystanie certyfikatów kryptograficznych}
+    \subsubsection{Infrastruktura klucza publicznego}
+      W celu wykorzystania certyfikatów w aplikacji Bob konieczne jest zbudowanie minimalnej infrastruktury klucza
+      publicznego (PKI). Wykorzystany do tego zostało oprogramownie \emph{easyrsa} będący częścią pakietu OpenVPN.
+      Skrypt tworzący infrastrukturę klucza publicznego znajduje się w pliku \emph{build\_pk.sh}. Tworzone przez
+      niego klucze oraz certyfikaty zostały opisane poniżej. Przechowywane są one w formacie \emph{PEM (Privacy Enhanced Mail)}
+
+      \paragraph{Urząd certyfikacji}
+        Przy tworzeniu centrum certyfikacji generowane są:
+        \begin{itemize}
+          \item Klucz prywatny - zapisany w pliku \emph{pki/ca/ca.key}, służy do podpisywania zgłoszonych przez klientów
+            oraz serwery żądań certyfikacji,
+          \item Certyfikat centrum certyfikacji - zapisany w pliku \emph{pki/ca/ca.crt}, samopodpisany certyfikat, w którym
+            znajduje się klucz publiczny urzędu certyfikacji, służący do weryfikacji wystawionych certyfikatów
+        \end{itemize}
+
+      \paragraph{Użytkownicy}
+        Domyślnie tworzone są klucze oraz certyfikaty dla dwóch użytkowników - klienta i serwera. W każdej chwili możliwe
+        jest wygenerowanie nowej pary - klucza i certyfikatu - przy użyciu skryptu \emph{create\_certificate.sh}.
+        Skrypt ten generuje nową parę kluczy (prywatny oraz publiczny), wystawia żądanie certyfikacji dla urzędu certyfikacyjnego,
+        oraz je zatwierdza. W rezultacie powstają:
+        \begin{itemize}
+          \item Klucz prywatny - zapisany w pliku \emph{pki/NAZWA\_UŻYTKOWNIKA/NAZWA\_UŻYTKOWNIKA.key}, jest to klucz
+            prywatny użytkownika,
+          \item Certyfikat - zapisany w pliku \emph{pki/NAZWA\_UŻYTKOWNIKA/NAZWA\_UŻYTKOWNIKA.crt}, certyfikat wystawiony
+              przez urząd certyfikacji, w którym znajduje się klucz publiczny użytkownika
+        \end{itemize}
+
+    \subsubsection{Weryfikacja wystawionych certyfikatów}
+      Przy starcie aplikacji certyfikat urzędu certyfikującego jest ładowany z na stałe zapisanej w programie lokalizacji.
+      Następnie wykonywana jest wymiana certyfikatów między klientem a serwerem. Po otrzymaniu certyfikatu od rozmówcy
+      obliczana jest, na podstawie podpisu cyfrowego i klucza publicznego urzędu certyfikującego, wartość funkcji skrótu
+      certyfikatu. Wartość funkcji skrótu jest również obliczana z danych wchodzących w skład certyfikatu. Jeśli te dwie
+      wartości są takie same, certyfikat można uznać za zaufany. Dane zawarte w certyfikacie oraz obliczone wartości
+      funkcji skrótu są przedstawione użytkownikowi. Do niego należy ostateczna decyzja, czy zaakceptować otrzymany
+      certyfikat.
+        \begin{figure}[tp]
+            \centering
+            \includegraphics[scale=0.5]{rezultat_weryfikacji_certyfikatu}
+            \caption{Szczegóły otrzymanego certyfikatu wyświetlane użytkownikowi}
+            \label{CERTIFICATE_VALIDATION_RESULT}
         \end{figure}
 
   \subsection{Interfejs użytkownika}
